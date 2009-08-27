@@ -25,6 +25,7 @@ Gem::Specification.new do |s|
      "README.rdoc",
      "Rakefile",
      "lib/mvc.rb",
+     "mvc.gemspec",
      "test/mvc_test.rb",
      "test/test_helper.rb"
   ]
