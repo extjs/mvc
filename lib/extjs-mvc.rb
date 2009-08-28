@@ -11,7 +11,7 @@ module ExtJS
         require 'active_record/model'
       end
       require 'action_controller/controller'
-      require 'action_view/helpers/data/store'
+      require 'action_view/helpers/store'
    end
 end
 

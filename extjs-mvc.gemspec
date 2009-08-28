@@ -24,7 +24,7 @@ Gem::Specification.new do |s|
      "Rakefile",
      "VERSION",
      "lib/action_controller/controller.rb",
-     "lib/action_view/helpers/data/store.rb",
+     "lib/action_view/helpers/store.rb",
      "lib/active_record/model.rb",
      "lib/dm/model.rb",
      "lib/extjs-mvc.rb",
