@@ -4,7 +4,7 @@
 # -*- encoding: utf-8 -*-
 
 Gem::Specification.new do |s|
-  s.name = %q{mvc}
+  s.name = %q{extjs-mvc}
   s.version = "0.1.7"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
@@ -28,7 +28,6 @@ Gem::Specification.new do |s|
      "lib/active_record/model.rb",
      "lib/dm/model.rb",
      "lib/extjs-mvc.rb",
-     "lib/mvc.rb",
      "test/mvc_test.rb",
      "test/test_helper.rb"
   ]
