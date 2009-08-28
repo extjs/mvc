@@ -50,7 +50,16 @@ module ExtJS
         {
           "fields" => @@fields.collect {|f|
             col = self.columns.find {|c| c.name.to_sym === f}
-            field = {:name => col.name, :allowBlank => col.null, :type => col.type}
+            type = col.type
+            case col.type
+              when :datetime || :date || :time || :timestamp
+                type = :date
+              when :text
+                type = :string
+              when :integer
+                type = :int
+            end
+            field = {:name => col.name, :allowBlank => col.null, :type => type}
             field[:dateFormat] = "c" if col.type === :datetime || col.type === :date  # <-- ugly hack for date
             field
           },
