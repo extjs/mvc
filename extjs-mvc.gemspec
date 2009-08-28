@@ -4,12 +4,12 @@
 # -*- encoding: utf-8 -*-
 
 Gem::Specification.new do |s|
-  s.name = %q{mvc}
-  s.version = "0.0.1"
+  s.name = %q{extjs-mvc}
+  s.version = "0.1.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Chris Scott"]
-  s.date = %q{2009-08-26}
+  s.date = %q{2009-08-27}
   s.description = %q{MVC tools to assist with ExtJS development in Rails and Merb}
   s.email = %q{christocracy@gmail.com}
   s.extra_rdoc_files = [
@@ -18,14 +18,16 @@ Gem::Specification.new do |s|
      "README.rdoc"
   ]
   s.files = [
-    ".document",
-     ".gitignore",
-     "LICENSE",
+    "LICENSE",
      "README",
      "README.rdoc",
      "Rakefile",
-     "lib/mvc.rb",
-     "mvc.gemspec",
+     "VERSION",
+     "lib/action_controller/controller.rb",
+     "lib/action_view/helpers/data/store.rb",
+     "lib/active_record/model.rb",
+     "lib/dm/model.rb",
+     "lib/extjs-mvc.rb",
      "test/mvc_test.rb",
      "test/test_helper.rb"
   ]
@@ -35,10 +37,6 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
   s.rubygems_version = %q{1.3.1}
   s.summary = %q{Ruby tools for ExtJS development}
-  s.test_files = [
-    "test/test_helper.rb",
-     "test/mvc_test.rb"
-  ]
 
   if s.respond_to? :specification_version then
     current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION

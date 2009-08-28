@@ -4,18 +4,22 @@ require 'rake'
 begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
-    gem.name = "mvc"
+    gem.name = "extjs-mvc"
     gem.summary = %Q{Ruby tools for ExtJS development}
     gem.description = %Q{MVC tools to assist with ExtJS development in Rails and Merb}
     gem.email = "christocracy@gmail.com"
     gem.homepage = "http://github.com/extjs/mvc"
     gem.authors = ["Chris Scott"]
     gem.add_development_dependency "thoughtbot-shoulda"
+    gem.test_files = []
+    gem.files =  FileList["[A-Z]*", "{bin,generators,lib,test}/**/*", 'lib/jeweler/templates/.gitignore']
+
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
 rescue LoadError
   puts "Jeweler (or a dependency) not available. Install it with: sudo gem install jeweler"
 end
+
 
 require 'rake/testtask'
 Rake::TestTask.new(:test) do |test|
