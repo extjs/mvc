@@ -27,6 +27,7 @@ Gem::Specification.new do |s|
      "lib/action_view/helpers/store.rb",
      "lib/active_record/model.rb",
      "lib/dm/model.rb",
+     "lib/extjs-mvc.rb",
      "lib/mvc.rb",
      "test/mvc_test.rb",
      "test/test_helper.rb"
