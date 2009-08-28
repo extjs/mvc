@@ -2,9 +2,6 @@ module ExtJS::Controller
 
   def self.included(controller)
     controller.send(:extend, ClassMethods)
-    controller.class_eval do
-      helper ExtJS::Data
-    end
   end
 
   ##

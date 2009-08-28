@@ -1,4 +1,4 @@
-module ExtJS::Data
+module ExtJS::Helpers
   module Store
     def extjs_store(params)
       params[:format] = 'json' if params[:format].nil?
