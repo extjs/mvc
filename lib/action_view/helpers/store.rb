@@ -32,7 +32,16 @@ module ExtJS::Helpers
         end
         script += "});"
       end
-      "new Ext.data.#{type}Store(#{params[:config].to_json});#{script}"
+
+      if params[:config]["writer"]  # <-- ugly hack because 3.0.1 can't deal with Writer as config-param
+        writer = params[:config].delete("writer")
+        json = params[:config].to_json
+        json[json.length-1] = ','
+        json += "writer:new Ext.data.#{params[:format].capitalize}Writer(#{writer.to_json})}"
+        "new Ext.data.#{type}Store(#{json});#{script}"
+      else
+        "new Ext.data.#{type}Store(#{params[:config].to_json});#{script}"
+      end
 
     end
   end
