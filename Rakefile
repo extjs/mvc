@@ -4,7 +4,7 @@ require 'rake'
 begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
-    gem.name = "extjs-mvc"
+    gem.name = "mvc"
     gem.summary = %Q{Ruby tools for ExtJS development}
     gem.description = %Q{MVC tools to assist with ExtJS development in Rails and Merb}
     gem.email = "christocracy@gmail.com"

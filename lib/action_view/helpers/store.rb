@@ -10,7 +10,7 @@ module ExtJS::Helpers
       reader = controller.extjs_reader(model)
       proxy = controller.extjs_proxy(params)
 
-      params[:config]["storeId"] = model.to_s.downcase
+      params[:config]["storeId"] = model.to_s.downcase if params[:config]["storeId"].nil?
       params[:config].merge!(reader)
       params[:config].merge!(proxy)
 
@@ -21,7 +21,7 @@ module ExtJS::Helpers
       if params[:proxy] === 'direct'
         auto_load = params[:config].delete("autoLoad")
         cname = params[:controller].capitalize
-        script = "Ext.onReady(function() { var s = Ext.StoreMgr.get('#{model.to_s.downcase}');"
+        script = "Ext.onReady(function() { var s = Ext.StoreMgr.get('#{params[:config]["storeId"]}');"
         if (params[:config]["directFn"])
           script += "s.proxy.directFn = #{cname}.#{params[:config]["directFn"]};"
         else
