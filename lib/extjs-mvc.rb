@@ -10,6 +10,7 @@ module ExtJS
       if defined?(ActiveRecord)
         require 'active_record/model'
       end
+      require 'action_view/helpers/component'
       require 'action_controller/controller'
       require 'action_view/helpers/store'
    end

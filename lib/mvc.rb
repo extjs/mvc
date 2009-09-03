@@ -12,6 +12,7 @@ module ExtJS
       end
       require 'action_controller/controller'
       require 'action_view/helpers/store'
+      require 'action_view/helpers/component'
    end
 end
 
