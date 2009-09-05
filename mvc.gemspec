@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{mvc}
-  s.version = "0.1.16"
+  s.version = "0.1.17"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Chris Scott"]
-  s.date = %q{2009-09-04}
+  s.date = %q{2009-09-05}
   s.description = %q{MVC tools to assist with ExtJS development in Rails and Merb}
   s.email = %q{christocracy@gmail.com}
   s.extra_rdoc_files = [
@@ -24,11 +24,13 @@ Gem::Specification.new do |s|
      "Rakefile",
      "VERSION",
      "lib/action_controller/controller.rb",
-     "lib/action_view/helpers/component.rb",
-     "lib/action_view/helpers/store.rb",
      "lib/active_record/model.rb",
      "lib/dm/model.rb",
      "lib/extjs-mvc.rb",
+     "lib/extjs/component.rb",
+     "lib/extjs/data/store.rb",
+     "lib/helpers/component.rb",
+     "lib/helpers/store.rb",
      "lib/mvc.rb",
      "test/mvc_test.rb",
      "test/test_helper.rb"
