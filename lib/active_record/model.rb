@@ -3,6 +3,10 @@ module ExtJS
     def self.included(model)
       model.send(:extend, ClassMethods)
       model.send(:include, InstanceMethods)
+      model.class_eval do        
+        cattr_accessor :extjs_record_fields
+      end
+      model.extjs_record_fields = []
     end
 
     ##
@@ -21,7 +25,6 @@ module ExtJS
     # ClassMethods
     #
     module ClassMethods
-      @@fields = []
       ##
       # Defines the subset of AR columns used to create Ext.data.Record def'n.
       # @param {Array/Hash} list-of-fields to include, :only, or :exclude
@@ -30,14 +33,14 @@ module ExtJS
         options = params.extract_options!
         if !options.keys.empty?
           if options[:only]
-            @@fields = options[:only]
+            self.extjs_record_fields = options[:only]
           elsif options[:exclude]
-            @@fields = self.columns.reject {|c| options[:exclude].find {|ex| c.name.to_sym === ex}}.collect {|c| c.name.to_sym}
+            self.extjs_record_fields = self.columns.reject {|c| options[:exclude].find {|ex| c.name.to_sym === ex}}.collect {|c| c.name.to_sym}
           end
         elsif !params.empty?
-          @@fields = params
+          self.extjs_record_fields = params
         else
-          @@fields
+          self.extjs_record_fields
         end
       end
 
@@ -46,10 +49,12 @@ module ExtJS
       # eg: {name:'foo', type: 'string'}
       #
       def extjs_record
-        @@fields = self.columns.collect {|c| c.name.to_sym } if @@fields.empty?
+        self.extjs_record_fields = self.columns.collect {|c| c.name.to_sym } if self.extjs_record_fields.empty?
         {
-          "fields" => @@fields.collect {|f|
+          "fields" => extjs_record_fields.collect {|f|
             col = self.columns.find {|c| c.name.to_sym === f}
+	    puts "COL: " + col.to_s
+
             type = col.type
             case col.type
               when :datetime || :date || :time || :timestamp
