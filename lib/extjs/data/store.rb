@@ -41,9 +41,9 @@ module ExtJS::Data
       # ugly hack for DirectProxy API.  Have to add an Ext.onReady() after the Store constructor to set API
       if @proxy === 'direct'
         auto_load = @config.delete("autoLoad")
-        cname = @controller.capitalize
+        cname = @controller.controller_name.capitalize
         script = "Ext.onReady(function() { var s = Ext.StoreMgr.get('#{@config["storeId"]}');"
-        if (@options["directFn"])
+        if (@config["directFn"])
           script += "s.proxy.directFn = #{cname}.#{@config["directFn"]};"
         else
           script += "s.proxy.setApi({create:#{cname}.#{@config["api"]["create"]},read:#{cname}.#{@config["api"]["read"]},update:#{cname}.#{@config["api"]["update"]},destroy:#{cname}.#{@config["api"]["destroy"]}});"

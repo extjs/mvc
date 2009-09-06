@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{mvc}
-  s.version = "0.1.20"
+  s.version = "0.1.22"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Chris Scott"]
-  s.date = %q{2009-09-06}
+  s.date = %q{2009-09-07}
   s.description = %q{MVC tools to assist with ExtJS development in Rails and Merb}
   s.email = %q{christocracy@gmail.com}
   s.extra_rdoc_files = [
