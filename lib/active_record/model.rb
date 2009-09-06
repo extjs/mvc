@@ -15,7 +15,7 @@ module ExtJS
     module InstanceMethods
       def to_record
         data = {self.class.primary_key => self.send(self.class.primary_key)}
-        self.class.extjs_fields.each do |f|
+        self.class.extjs_record_fields.each do |f|
           data[f] = self.send(f)
         end
         data
@@ -51,10 +51,8 @@ module ExtJS
       def extjs_record
         self.extjs_record_fields = self.columns.collect {|c| c.name.to_sym } if self.extjs_record_fields.empty?
         {
-          "fields" => extjs_record_fields.collect {|f|
+          "fields" => self.extjs_record_fields.collect {|f|
             col = self.columns.find {|c| c.name.to_sym === f}
-	    puts "COL: " + col.to_s
-
             type = col.type
             case col.type
               when :datetime || :date || :time || :timestamp

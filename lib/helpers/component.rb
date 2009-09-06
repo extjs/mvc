@@ -12,7 +12,9 @@ module ExtJS::Helpers
     end
 
     def extjs_component(*params)
-      ExtJS::Component.new(self, params)
+      options = params.extract_options!
+      options[:controller] = self
+      ExtJS::Component.new(options)
     end
 
     ##

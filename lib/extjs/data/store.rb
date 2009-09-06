@@ -8,7 +8,7 @@ module ExtJS::Data
     def initialize(params)
       options = params.extract_options!
       options[:format] = 'json' if options[:format].nil?
-
+	
       @config = options[:config]
 
       @format     = options[:format]
