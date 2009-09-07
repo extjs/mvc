@@ -13,12 +13,10 @@ module ExtJS
       require 'extjs/component'
       require 'extjs/data/store'
 
-      require 'action_view/helpers/component'
-      require 'action_view/helpers/store'
+      require 'helpers/component'
+      require 'helpers/store'
 
       require 'action_controller/controller'
 
    end
 end
-
-
