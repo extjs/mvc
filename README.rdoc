@@ -1,24 +1,24 @@
 = mvc
 
 A collection of helpers and MVC mixins.
-<ul>
+&lt;ul&gt;
     ExtJS::Model for ActiveRecord
     ExtJS::Controller for ActionController
     ExtJS::Helpers::Component for rending component with Ext.Component configuration params.
     ExtJS::Helpers::Store for rendering Ext.data.Store.  Reflects upon Model meta-data to produce Ext.data.Record def'n.
-</ul>
-<code>
-<%
+&lt;/ul&gt;
+&lt;code&gt;
+&lt;%
   @viewport = extjs_component(
-    "xtype" => "viewport",
-    "frame" => true,
-    "layout" => "border")
-  @viewport.add("xtype" => "panel", "contentEl" => "hd", "region" => "north", "height" => 30)
-  @viewport.add(:partial => "/users/grid", "itemId" => "users-grid", "region" => "west")
-  @viewport.add(:partial => "/tasks/grid", "itemId" => "tasks-grid", "region" => "center")
-  @viewport.add("xtype" => "panel", "contentEl" => "ft", "region" => "south", "height" => 20)
-%>
-</code>
+    "xtype" =&gt; "viewport",
+    "frame" =&gt; true,
+    "layout" =&gt; "border")
+  @viewport.add("xtype" =&gt; "panel", "contentEl" =&gt; "hd", "region" =&gt; "north", "height" =&gt; 30)
+  @viewport.add(:partial =&gt; "/users/grid", "itemId" =&gt; "users-grid", "region" =&gt; "west")
+  @viewport.add(:partial =&gt; "/tasks/grid", "itemId" =&gt; "tasks-grid", "region" =&gt; "center")
+  @viewport.add("xtype" =&gt; "panel", "contentEl" =&gt; "ft", "region" =&gt; "south", "height" =&gt; 20)
+%&gt;
+&lt;/code&gt;
 
 
 
