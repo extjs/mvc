@@ -15,7 +15,7 @@ module ExtJS::Data
       @proxy      = options[:proxy] || 'http'
       @writer     = options[:writer]
       @type       = (@proxy === 'direct' ? @proxy : @format).capitalize
-      @controller = "#{options[:controller].to_s.capitalize}Controller".constantize
+      @controller = "#{options[:controller].to_s.camelize}Controller".constantize
       @model      = ((options[:model]) ? options[:model] : @controller.controller_name.singularize).camelize.constantize
 
       # Merge Reader/Proxy config

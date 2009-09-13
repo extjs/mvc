@@ -3,7 +3,7 @@ module ExtJS
     def self.included(model)
       model.send(:extend, ClassMethods)
       model.send(:include, InstanceMethods)
-      model.class_eval do        
+      model.class_eval do
         cattr_accessor :extjs_record_fields
       end
       model.extjs_record_fields = []
@@ -32,9 +32,7 @@ module ExtJS
       def extjs_fields(*params)
         options = params.extract_options!
         if !options.keys.empty?
-          if options[:only]
-            self.extjs_record_fields = options[:only]
-          elsif options[:exclude]
+          if options[:exclude]
             self.extjs_record_fields = self.columns.reject {|c| options[:exclude].find {|ex| c.name.to_sym === ex}}.collect {|c| c.name.to_sym}
           end
         elsif !params.empty?
@@ -49,22 +47,30 @@ module ExtJS
       # eg: {name:'foo', type: 'string'}
       #
       def extjs_record
-        self.extjs_record_fields = self.columns.collect {|c| c.name.to_sym } if self.extjs_record_fields.empty?
-        {
+        if self.extjs_record_fields.empty?
+          self.extjs_record_fields = self.columns.collect {|c| c.name.to_sym }
+          self.extjs_record_fields.concat(self.reflect_on_all_associations.collect {|assn| assn.name})
+        end
+
+        return {
           "fields" => self.extjs_record_fields.collect {|f|
-            col = self.columns.find {|c| c.name.to_sym === f}
-            type = col.type
-            case col.type
-              when :datetime || :date || :time || :timestamp
-                type = :date
-              when :text
-                type = :string
-              when :integer
-                type = :int
+            if col = self.columns_hash[f.to_s]
+              type = col.type
+              case col.type
+                when :datetime || :date || :time || :timestamp
+                  type = :date
+                when :text
+                  type = :string
+                when :integer
+                  type = :int
+              end
+              field = {:name => col.name, :allowBlank => (col.primary) ? true : col.null, :type => type}
+              field[:dateFormat] = "c" if col.type === :datetime || col.type === :date  # <-- ugly hack for date
+              field
+            elsif self.reflections[f]
+              assn = self.reflections[f]
+              field = {:name => assn.name, :allowBlank => true, :type => 'auto'}
             end
-            field = {:name => col.name, :allowBlank => (col.primary) ? true : col.null, :type => type}
-            field[:dateFormat] = "c" if col.type === :datetime || col.type === :date  # <-- ugly hack for date
-            field
           },
           "idProperty" => self.primary_key
         }
