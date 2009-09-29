@@ -16,7 +16,12 @@ module ExtJS
       def to_record
         data = {self.class.primary_key => self.send(self.class.primary_key)}
         self.class.extjs_record_fields.each do |f|
-          data[f] = self.send(f)
+          refl = self.class.reflections[f]
+          if (refl && refl.macro === :belongs_to)
+            data[f] = self.send(f).attributes
+          else
+            data[f] = self.send(f)
+          end
         end
         data
       end

@@ -4,11 +4,11 @@
 module ExtJS::Data
   class Store
     attr_accessor :id, :format, :type, :controller, :model
-		   
-    def initialize(params)
+
+    def initialize(*params)
       options = params.extract_options!
       options[:format] = 'json' if options[:format].nil?
-	
+
       @config = options[:config]
 
       @format     = options[:format]
