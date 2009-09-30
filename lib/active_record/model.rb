@@ -18,7 +18,8 @@ module ExtJS
         self.class.extjs_record_fields.each do |f|
           if refl = self.class.reflections[f]
             if refl.macro === :belongs_to
-              data[f] = self.send(f).to_record
+	      assn = self.send(f)
+              data[f] = (assn) ? assn.to_record : {} # <-- a thing was requested, give emtpy thing.
             elsif refl.macro === :has_many
 	      #data[f] = self.send(f).collect {|r| r.to_record}  CAREFUL!!!!!!!!!!!!1
             end
