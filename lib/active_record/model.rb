@@ -18,9 +18,9 @@ module ExtJS
         self.class.extjs_record_fields.each do |f|
           if refl = self.class.reflections[f]
             if refl.macro === :belongs_to
-              data[f] = self.send(f).attributes
+              data[f] = self.send(f).to_record
             elsif refl.macro === :has_many
-              data[f] = self.send(f).collect {|r| r.attributes}
+              data[f] = self.send(f).collect {|r| r.to_record}
             end
           else
             data[f] = self.send(f)

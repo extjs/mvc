@@ -1,8 +1,5 @@
 module ExtJS
     class MVC
-      @@success_property = :success
-      @@message_property = :message
-      @@root = :data
       cattr_accessor :success_property
       cattr_accessor :message_property
       cattr_accessor :root
