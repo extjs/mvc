@@ -20,7 +20,7 @@ module ExtJS
             if refl.macro === :belongs_to
               data[f] = self.send(f).to_record
             elsif refl.macro === :has_many
-              data[f] = self.send(f).collect {|r| r.to_record}
+	      #data[f] = self.send(f).collect {|r| r.to_record}  CAREFUL!!!!!!!!!!!!1
             end
           else
             data[f] = self.send(f)
