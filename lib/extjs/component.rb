@@ -7,7 +7,7 @@ class ExtJS::Component
     @config = params#params.extract_options!
     @controller = @config.delete(:controller) unless @config[:controller].nil?
 
-    @config[:items] = [] if config[:items].nil?
+    @config["items"] = [] if config["items"].nil?
 
     if container = @config.delete(:container)
       container.add(self)
@@ -25,25 +25,32 @@ class ExtJS::Component
   # instance will be returned.
   # @return {String/ExtJS::Component}
   def add(*config)
+
     options = config.extract_options!
     if !options.keys.empty?
       if url = options.delete(:partial)
         # rendering a partial, cache the config until partial calls #add method.  @see else.
         @partial_config = options
-        return @controller.render(:partial => url, :locals => {:container => self})
+        if (@controller.respond_to?(:partial))
+          # Merb
+          return @controller.partial(url, :with => self, :as => :container)
+        else
+          # Rails
+          return @controller.render(:partial => url, :locals => {:container => self})
+        end
       else
         options.merge!(@partial_config) unless @partial_config.nil?
         options[:controller] = @controller unless @controller.nil?
         cmp = ExtJS::Component.new(options)
         @partial_config = nil
-        @config[:items] << cmp
+        @config["items"] << cmp
         return cmp
       end
     elsif !config.empty? && config.first.kind_of?(ExtJS::Component)
       cmp = config.first
       cmp.apply(@partial_config) unless @partial_config.nil?
       @partial_config = nil
-      @config[:items] << cmp.config
+      @config["items"] << cmp.config
       return cmp
     end
   end
@@ -53,6 +60,8 @@ class ExtJS::Component
   end
 
   def render
+    @config.delete("items") if @config["items"].empty?
+
     # If there are any listeners attached in json, we have to get rid of double-quotes in order to expose
     # the javascript object.
     # eg:  "listeners":"SomeController.listeners.grid" -> {"listeners":SomeController.listeners.grid, ...}

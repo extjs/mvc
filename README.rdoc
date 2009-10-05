@@ -11,11 +11,8 @@ A collection of helpers, MVC mixins and PORs (plain-old-ruby-object) to assist w
 In <tt>environment.rb</tt>
 
     Rails::Initializer.run do |config|
-        .
-        .
-        .
+        config.gem "extjs-mvc"
     end
-    require 'extjs-mvc'
 
 
 === An ActiveRecord mixin:  ExtJS::Model

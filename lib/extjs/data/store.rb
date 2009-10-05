@@ -15,8 +15,8 @@ module ExtJS::Data
       @proxy      = options[:proxy] || 'http'
       @writer     = options[:writer]
       @type       = (@proxy === 'direct' ? @proxy : @format).capitalize
-      @controller = "#{options[:controller].to_s.camelize}Controller".constantize
-      @model      = ((options[:model]) ? options[:model] : @controller.controller_name.singularize).camelize.constantize
+      @controller = self.get_controller(options[:controller])
+      @model      = self.get_model(options[:controller], options[:model])
 
       # Merge Reader/Proxy config
       @config.merge!(@controller.extjs_reader(@model))
@@ -61,6 +61,22 @@ module ExtJS::Data
         "<script>new Ext.data.#{@type}Store(#{json});#{script}</script>"
       else
         "<script>new Ext.data.#{@type}Store(#{@config.to_json});#{script}</script>"
+      end
+    end
+
+    def get_controller(name)
+      if (defined?(Rails))
+        "#{name.to_s.camelize}Controller".constantize
+      else
+        Extlib::Inflection.constantize("#{Extlib::Inflection.camelize(name)}")
+      end
+    end
+
+    def get_model(controller, model)
+      if (defined?(Rails))
+        ((model) ? model : controller.singularize).camelize.constantize
+      else
+        Extlib::Inflection.constantize(Extlib::Inflection.camelize(((model) ? model : Extlib::Inflection.singularize(controller))))
       end
     end
   end

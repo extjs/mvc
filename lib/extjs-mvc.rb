@@ -7,16 +7,28 @@ module ExtJS
       cattr_accessor :message_property
       cattr_accessor :root
 
+      # Detect orm, include appropriate mixin.
       if defined?(ActiveRecord)
-        require 'active_record/model'
+        require 'model/active_record/model'
+      elsif defined?(DataMapper)
+        require 'model/dm/model'
       end
+
+      # Rails-style Array#extract_options! used heavily
+      if defined?(Merb)
+        require 'core_ext/array/extract_options'
+      end
+
+      # ExtJS Component and Store wrappers
       require 'extjs/component'
       require 'extjs/data/store'
 
+      # Component/Store view-helpers
       require 'helpers/component'
       require 'helpers/store'
 
-      require 'action_controller/controller'
+      # Controller mixin.  Works for both Rails and Merb.
+      require 'controller/controller'
 
    end
 end

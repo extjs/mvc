@@ -6,7 +6,7 @@ module ExtJS::Helpers
     ##
     # add class-var @@extjs_on_ready
     def self.included(helper)
-    
+
     end
 
     def extjs_component(*params)
@@ -21,9 +21,8 @@ module ExtJS::Helpers
     #
     def extjs_onready(*params)
       @onready_queue = [] if @onready_queue.nil?
-
       params.each do |cmp|
-	@onready_queue << cmp
+        @onready_queue << cmp
       end
     end
 
@@ -31,7 +30,7 @@ module ExtJS::Helpers
     # Empties the on_ready queue.  Renders within <script></script> tags
     #
     def extjs_render
-      @onready_queue = [] if @onready_queue.nil? # <--- ugly, ugh...having trouble with initializing my instance vars.
+      @onready_queue = [] if @onready_queue.nil?
       "<script>\nExt.onReady(function() {\n\t#{@onready_queue.collect {|cmp| (cmp.kind_of?(ExtJS::Component)) ? cmp.render : cmp}.join("\n\t")}\n });\n</script>"
     end
   end
