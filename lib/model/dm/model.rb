@@ -85,6 +85,8 @@ module ExtJS
               field
             elsif assn = self.relationships[f]
               field = {:name => f, :allowBlank => true, :type => 'auto'}
+            else # property is a method?
+              field = {:name => f, :allowBlank => true, :type => 'auto'}
             end
           },
           "idProperty" => pk.name
