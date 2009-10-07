@@ -10,17 +10,18 @@ module ExtJS::Data
       options[:format] = 'json' if options[:format].nil?
 
       @config = options[:config]
-
+      @grouping   = options[:grouping] || false
       @format     = options[:format]
       @proxy      = options[:proxy] || 'http'
       @writer     = options[:writer]
-      @type       = (@proxy === 'direct' ? @proxy : @format).capitalize
+      @type       = (options[:type] === 'grouping' ? options[:type] : @proxy === 'direct' ? @proxy : @format).capitalize
       @controller = self.get_controller(options[:controller])
       @model      = self.get_model(options[:controller], options[:model])
 
       # Merge Reader/Proxy config
       @config.merge!(@controller.extjs_reader(@model))
       @config.merge!(@controller.extjs_proxy(options))
+      @config["format"] = @format
 
       # Set storeId implicitly based upon Model name if not set explicitly
       @id = @config["storeId"] = @model.to_s.downcase unless @config["storeId"]
