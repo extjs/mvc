@@ -10,11 +10,10 @@ module ExtJS::Data
       options[:format] = 'json' if options[:format].nil?
 
       @config = options[:config]
-      @grouping   = options[:grouping] || false
       @format     = options[:format]
       @proxy      = options[:proxy] || 'http'
       @writer     = options[:writer]
-      @type       = (options[:type] === 'grouping' ? options[:type] : @proxy === 'direct' ? @proxy : @format).capitalize
+      @type       = (options[:type].nil?) ? @proxy === 'direct' ? 'Ext.data.DirectStore' : "Ext.data.#{@format.capitalize}Store" : options[:type] 
       @controller = self.get_controller(options[:controller])
       @model      = self.get_model(options[:controller], options[:model])
 
@@ -59,9 +58,9 @@ module ExtJS::Data
         json = @config.to_json
         json[json.length-1] = ','
         json += "writer:new Ext.data.#{@format.capitalize}Writer(#{@writer.to_json})}"
-        "<script>new Ext.data.#{@type}Store(#{json});#{script}</script>"
+        "<script>new #{@type}(#{json});#{script}</script>"
       else
-        "<script>new Ext.data.#{@type}Store(#{@config.to_json});#{script}</script>"
+        "<script>new #{@type}(#{@config.to_json});#{script}</script>"
       end
     end
 

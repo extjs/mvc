@@ -24,7 +24,7 @@ module ExtJS
               assn = self.send(f)
               data[f] = (assn) ? assn.to_record : {} # <-- a thing was requested, give emtpy thing.
             elsif refl.options[:max] > 1
-              #data[f] = self.send(f).collect {|r| r.to_record}  CAREFUL!!!!!!!!!!!!1
+              data[f] = self.send(f).collect {|r| r.to_record}  #CAREFUL!!!!!!!!!!!!1
             end
           else
             data[f] = self.send(f)
