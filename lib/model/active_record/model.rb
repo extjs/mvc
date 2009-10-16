@@ -74,6 +74,8 @@ module ExtJS
                   type = :string
                 when :integer
                   type = :int
+                when :decimal
+                  type = :float
               end
               field = {:name => col.name, :allowBlank => (col.primary) ? true : col.null, :type => type}
               field[:dateFormat] = "c" if col.type === :datetime || col.type === :date  # <-- ugly hack for date
