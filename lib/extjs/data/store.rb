@@ -57,7 +57,7 @@ module ExtJS::Data
       if @writer  # <-- ugly hack because 3.0.1 can't deal with Writer as config-param
         json = @config.to_json
         json[json.length-1] = ','
-        json += "writer:new Ext.data.#{@format.capitalize}Writer(#{@writer.to_json})}"
+        json += "\"writer\":new Ext.data.#{@format.capitalize}Writer(#{@writer.to_json})}"
         "<script>new #{@type}(#{json});#{script}</script>"
       else
         "<script>new #{@type}(#{@config.to_json});#{script}</script>"
