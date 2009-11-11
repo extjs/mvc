@@ -23,6 +23,11 @@ fields with will be used to render the <tt>Ext.data.Record.create</tt> field-def
       include ExtJS::Model
 
       extjs_fields :exclude => [:password, :password_confirmation]
+      # OR
+      extjs_fields :name, :description
+      # OR
+      extjs_fields :name, :description, :parent => [:name, :date]
+      # this would configure associated columns with names like "parent__name" and "parent__date")
     end
 
 In script/console

@@ -23,6 +23,15 @@ module ExtJS
             elsif refl.macro === :has_many
 	      #data[f] = self.send(f).collect {|r| r.to_record}  CAREFUL!!!!!!!!!!!!1
             end
+          #facilitates using individual attributes from associations
+          #include an array in the field list [:field_1, :field_2, [:parent_association, :name]]
+          elsif f.is_a? Array
+            value = self
+            f.each do |method|
+              value = value.send(method)
+              break if value.nil?
+            end
+            data[f.join('__')] = value
           else
             data[f] = self.send(f)
           end
@@ -37,21 +46,29 @@ module ExtJS
       ##
       # Defines the subset of AR columns used to create Ext.data.Record def'n.
       # @param {Array/Hash} list-of-fields to include, :only, or :exclude
+      # also accepts association columns like so:
+      # :field1, :field2, :parent => [:field1, field2]
       #
       def extjs_fields(*params)
         options = params.extract_options!
+
         if !options.keys.empty?
-          if options[:exclude]
-            self.extjs_record_fields = self.columns.reject {|c| options[:exclude].find {|ex| c.name.to_sym === ex}}.collect {|c| c.name.to_sym}
-          elsif options[:only]
-            self.extjs_record_fields = options[:only]
-            self.extjs_record_fields << self.primary_key if !self.extjs_record_fields.include?(self.primary_key)
+          if excludes = options.delete(:exclude)
+            self.extjs_record_fields = self.columns.reject {|c| excludes.find {|ex| c.name.to_sym === ex}}.collect {|c| c.name.to_sym}
+          elsif only = options.delete(:only)
+            self.extjs_record_fields = only
           end
-        elsif !params.empty?
-          self.extjs_record_fields = params
-        else
-          self.extjs_record_fields
+          self.extjs_record_fields.concat(process_association_fields(options))
         end
+        
+        if !params.empty?
+          self.extjs_record_fields.concat(params)
+        else
+          return self.extjs_record_fields
+        end
+        
+        #Append primary key if it's not included
+        self.extjs_record_fields << self.primary_key.to_sym if !self.extjs_record_fields.include?(self.primary_key.to_sym)
       end
 
       ##
@@ -84,10 +101,26 @@ module ExtJS
             elsif self.reflections[f]
               assn = self.reflections[f]
               field = {:name => assn.name, :allowBlank => true, :type => 'auto'}
+            elsif f.is_a? Array
+              field = {:name => f.join('__'), :type => 'auto'}
             end
           },
           "idProperty" => self.primary_key
         }
+      end
+
+      private
+      ##
+      # Prepare the config for fields with '.' in their names
+      #
+      def process_association_fields(options)
+        results = []
+        options.each do |assoc, fields|
+          fields.each do |field|
+            results << [assoc, field]
+          end
+        end
+        results
       end
     end
   end
