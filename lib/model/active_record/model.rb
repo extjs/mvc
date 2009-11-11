@@ -59,14 +59,12 @@ module ExtJS
             self.extjs_record_fields = only
           end
           self.extjs_record_fields.concat(process_association_fields(options))
-        end
-        
-        if !params.empty?
-          self.extjs_record_fields.concat(params)
-        else
+        elsif params.empty?
           return self.extjs_record_fields
         end
-        
+
+        self.extjs_record_fields.concat(params) if !params.empty?
+
         #Append primary key if it's not included
         self.extjs_record_fields << self.primary_key.to_sym if !self.extjs_record_fields.include?(self.primary_key.to_sym)
       end
