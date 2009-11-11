@@ -44,7 +44,8 @@ module ExtJS
           if options[:exclude]
             self.extjs_record_fields = self.columns.reject {|c| options[:exclude].find {|ex| c.name.to_sym === ex}}.collect {|c| c.name.to_sym}
           elsif options[:only]
-            self.extjs_record_fields = options[:only].reject {|c| !self.columns.find {|col| col.name.to_sym === c}}
+            self.extjs_record_fields = options[:only]
+            self.extjs_record_fields << self.primary_key if !self.extjs_record_fields.include?(self.primary_key)
           end
         elsif !params.empty?
           self.extjs_record_fields = params
