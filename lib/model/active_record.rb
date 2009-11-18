@@ -23,6 +23,8 @@ module ExtJS
             type = :string
           when :integer
             type = :int
+          when :decimal
+            type = :float
         end
         {:name => col.name, :allowBlank => (col.primary) ? true : col.null, :type => type}        
       end
