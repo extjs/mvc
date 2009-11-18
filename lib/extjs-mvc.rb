@@ -6,12 +6,16 @@ module ExtJS
       cattr_accessor :success_property
       cattr_accessor :message_property
       cattr_accessor :root
-
+      
+      require 'model/base'
+      
       # Detect orm, include appropriate mixin.
       if defined?(ActiveRecord)
-        require 'model/active_record/model'
+        require 'model/active_record'
       elsif defined?(DataMapper)
-        require 'model/dm/model'
+        require 'model/data_mapper'
+      elsif defined?(MongoMapper)
+        require 'model/mongo_mapper'
       end
 
       # Rails-style Array#extract_options! used heavily

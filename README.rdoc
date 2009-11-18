@@ -1,5 +1,6 @@
 = mvc
 
+
 A collection of helpers, MVC mixins and PORs (plain-old-ruby-object) to assist with auto-generating ExtJS javascript component definitions.
 
 

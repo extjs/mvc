@@ -1,88 +1,42 @@
 module ExtJS
   module Model
-    def self.included(model)
-      model.send(:extend, ClassMethods)
-      model.send(:include, InstanceMethods)
-      model.class_eval do
-        cattr_accessor :extjs_record_fields
-      end
-      model.extjs_record_fields = []
-    end
-
-    ##
-    # InstanceMethods
-    #
-    module InstanceMethods
-      def to_record
-        data = {self.class.primary_key => self.send(self.class.primary_key)}
-        self.class.extjs_record_fields.each do |f|
-          if refl = self.class.reflections[f]
-            if refl.macro === :belongs_to
-	      assn = self.send(f)
-              data[f] = (assn) ? assn.to_record : {} # <-- a thing was requested, give emtpy thing.
-            elsif refl.macro === :has_many
-	      #data[f] = self.send(f).collect {|r| r.to_record}  CAREFUL!!!!!!!!!!!!1
-            end
-          else
-            data[f] = self.send(f)
-          end
-        end
-        data
-      end
-    end
-    ##
-    # ClassMethods
-    #
     module ClassMethods
-      ##
-      # Defines the subset of AR columns used to create Ext.data.Record def'n.
-      # @param {Array/Hash} list-of-fields to include, :only, or :exclude
-      #
-      def extjs_fields(*params)
-        options = params.extract_options!
-        if !options.keys.empty?
-          if options[:exclude]
-            self.extjs_record_fields = self.columns.reject {|c| options[:exclude].find {|ex| c.name.to_sym === ex}}.collect {|c| c.name.to_sym}
-          end
-        elsif !params.empty?
-          self.extjs_record_fields = params
-        else
-          self.extjs_record_fields
-        end
+      
+      def extjs_primary_key
+        self.primary_key
       end
-
-      ##
-      # render AR columns to Ext.data.Record.create format
-      # eg: {name:'foo', type: 'string'}
-      #
-      def extjs_record
-        if self.extjs_record_fields.empty?
-          self.extjs_record_fields = self.columns.collect {|c| c.name.to_sym }
-          self.extjs_record_fields.concat(self.reflect_on_all_associations.collect {|assn| assn.name})
+      
+      def extjs_column_names
+        self.column_names
+      end
+      
+      def extjs_columns_hash
+        self.columns_hash
+      end
+      
+      def extjs_render_column(col)
+        type = col.type
+        case type
+          when :datetime || :date || :time || :timestamp
+            type = :date
+          when :text
+            type = :string
+          when :integer
+            type = :int
         end
-
-        return {
-          "fields" => self.extjs_record_fields.collect {|f|
-            if col = self.columns_hash[f.to_s]
-              type = col.type
-              case col.type
-                when :datetime || :date || :time || :timestamp
-                  type = :date
-                when :text
-                  type = :string
-                when :integer
-                  type = :int
-              end
-              field = {:name => col.name, :allowBlank => (col.primary) ? true : col.null, :type => type}
-              field[:dateFormat] = "c" if col.type === :datetime || col.type === :date  # <-- ugly hack for date
-              field
-            elsif self.reflections[f]
-              assn = self.reflections[f]
-              field = {:name => assn.name, :allowBlank => true, :type => 'auto'}
-            end
-          },
-          "idProperty" => self.primary_key
-        }
+        {:name => col.name, :allowBlank => (col.primary) ? true : col.null, :type => type}        
+      end
+      
+      def extjs_associations
+        if @extjs_associations.nil?
+          @extjs_associations = {}
+          self.reflections.keys.each do |key|
+            assn = self.reflections[key]
+            type = (assn.macro === :has_many) ? :many : assn.macro
+            @extjs_associations[key.to_sym] = {:name => key, :type => type}
+          end
+        end        
+        @extjs_associations
       end
     end
   end

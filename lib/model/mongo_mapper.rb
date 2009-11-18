@@ -5,42 +5,43 @@ module ExtJS
     #
     module ClassMethods
       
-      def get_primary_key
+      def extjs_primary_key
         "id"
       end
       
-      def get_column_names
+      def extjs_column_names
         self.column_names
       end
       
-      def get_associations
-        assns = {}
-        self.associations.keys.each do |key|
-          assns[key.to_sym] = {:name => key, :type => self.associations[key].type}
-        end
-        assns
+      def extjs_columns_hash
+        self.keys
       end
       
-      def get_columns
-        columns = {}
-        self.column_names.each do |name|
-          col = self.keys[name]
-          type = col.type.to_s
-          case type
-            when "DateTime", "Date", "Time"
-              type = :date
-            when "String"
-              type = :string
-            when "Float"
-              type = :float
-            when "Integer", "BigDecimal"
-              type = :int
-            else
-              type = "auto"
-          end 
-          columns[name.to_sym] = {:name => name, :type => type, :required => (col.options[:required] === true || name === "_id") ? true : false }
+      def extjs_associations
+        if @extjs_associations.nil?
+          @extjs_associations = {}
+          self.associations.keys.each do |key|
+            @extjs_associations[key.to_sym] = {:name => key, :type => self.associations[key].type}
+          end
         end
-        columns
+        @extjs_associations
+      end
+      
+      def extjs_render_column(col)
+        type = col.type.to_s
+        case type
+          when "DateTime", "Date", "Time"
+            type = :date
+          when "String"
+            type = :string
+          when "Float"
+            type = :float
+          when "Integer", "BigDecimal"
+            type = :int
+          else
+            type = "auto"
+        end 
+        {:name => col.name, :type => type, :allowBlank => (col.name === '_id') ? true : (col.options[:required] === true) ? false : true }
       end
     end
   end

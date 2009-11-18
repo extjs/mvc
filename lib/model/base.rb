@@ -16,8 +16,8 @@ module ExtJS
     module InstanceMethods
       
       def to_record
-        pk = self.class.get_primary_key
-        assns = self.class.get_associations
+        pk = self.class.extjs_primary_key
+        assns = self.class.extjs_associations
         
         data = {pk => self.send(pk)}
         self.class.extjs_record_fields.each do |f|
@@ -28,14 +28,21 @@ module ExtJS
             elsif refl[:type] === :many
               data[f] = self.send(f).collect {|r| r.to_record}  #CAREFUL!!!!!!!!!!!!1
             end
+          elsif f.is_a? Array
+            value = self
+            f.each do |method|
+              value = value.send(method)
+              break if value.nil?
+            end
+            data[f.join('__')] = value
           else
             data[f] = self.send(f)
           end
         end
         data
       end
-      
     end
+    
     ##
     # ClassMethods
     #
@@ -47,22 +54,23 @@ module ExtJS
       def extjs_record
         
         if self.extjs_record_fields.empty?
-          self.extjs_record_fields = self.get_column_names
+          self.extjs_record_fields = self.extjs_column_names
         end
 
-        pk = self.get_primary_key
-        columns = self.get_columns
-        associations = self.get_associations
+        pk = self.extjs_primary_key
+        columns = self.extjs_columns_hash
+        associations = self.extjs_associations
         
         return {
           "fields" => self.extjs_record_fields.collect {|f|
-            if columns[f.to_sym]
-              col = columns[f.to_sym]
-              field = {:name => col[:name], :allowBlank => col[:required] === false, :type => col[:type]}
-              field[:dateFormat] = "c" if col[:type] === :date  # <-- ugly hack for date
+            if columns[f.to_sym] || columns[f.to_s]
+              field = self.extjs_render_column(columns[f.to_sym] || columns[f.to_s])
+              field[:dateFormat] = "c" if field[:type] === :date  # <-- ugly hack for date
               field
             elsif assn = associations[f]
-              field = {:name => f, :allowBlank => true, :type => 'object'}
+              field = {:name => f, :allowBlank => true, :type => 'auto'}
+            elsif f.is_a? Array
+              field = {:name => f.join('__'), :type => 'auto'}
             else # property is a method?
               field = {:name => f, :allowBlank => true, :type => 'auto'}
             end
@@ -71,21 +79,38 @@ module ExtJS
         }
       end
       
-      ##
-      # Defines the subset of AR columns used to create Ext.data.Record def'n.
-      # @param {Array/Hash} list-of-fields to include, :only, or :exclude
-      #
       def extjs_fields(*params)
         options = params.extract_options!
         if !options.keys.empty?
-          if options[:exclude]
-            self.extjs_record_fields = self.get_column_names.reject {|p| options[:exclude].find {|ex| p === ex.to_s}}.collect {|p| p}
+          if excludes = options.delete(:exclude)
+            self.extjs_record_fields = self.extjs_column_names.reject {|c| excludes.find {|ex| c === ex.to_s}}.collect {|c| c}
+          elsif only = options.delete(:only)
+            self.extjs_record_fields = only
           end
-        elsif !params.empty?
-          self.extjs_record_fields = params
-        else
-          self.extjs_record_fields
+          self.extjs_record_fields.concat(process_association_fields(options))
+        elsif params.empty?
+          return self.extjs_record_fields
         end
+
+        self.extjs_record_fields.concat(params) if !params.empty?
+
+        #Append primary key if it's not included
+        # I don't think we want to automatically include :id
+        # Chris
+        #self.extjs_record_fields << self.primary_key.to_sym if !self.extjs_record_fields.include?(self.primary_key.to_sym)
+      end
+      
+      ##
+      # Prepare the config for fields with '.' in their names
+      #
+      def process_association_fields(options)
+        results = []
+        options.each do |assoc, fields|
+          fields.each do |field|
+            results << [assoc, field]
+          end
+        end
+        results
       end
     end
   end
