@@ -74,39 +74,23 @@ module ExtJS
         rs = []
         fields.each do |field|
           field = field.dup
-          if columns[field[:name]] || columns[field[:name].to_s]  # <-- column on this model
-            rs << self.extjs_render_column(columns[field[:name]] || columns[field[:name].to_s], field)      
+          if columns[field[:name]] || columns[field[:name].to_s]  # <-- column on this model                
+            rs << self.extjs_field(field, columns[field[:name]] || columns[field[:name].to_s])      
           elsif assn = associations[field[:name] || field[:name].to_s]
-            
             assn_fields = field.delete(:fields) || []
             if assn[:class].respond_to?(:extjs_record)  # <-- exec extjs_record on assn Model.
-              record = assn[:class].send(:extjs_record, *assn_fields)
-              rs.concat(record["fields"].collect {|assn_field|  
-                assn_field.update(  # <-- have to apply mapping on returned record-fields
-                  :name => "#{field[:name]}_#{assn_field[:name]}",
-                  "mapping" => "#{field[:name]}.#{assn_field[:name]}"
-                )
+              rs.concat(assn[:class].send(:extjs_record, *assn_fields)["fields"].collect {|assn_field| 
+                extjs_field(assn_field, :mapping => field[:name])
               })
             elsif assn_fields.length > 0  # <-- :parent => [:id, :name]
-              assn_fields.each do |assn_field|
-              rs.concat(assn_fields.collect {|assn_field| {
-                  "name" => "#{field[:name]}_#{assn_field}", 
-                  "mapping" => "#{field[:name]}.#{assn_field}", 
-                  "allowBlank" => true, # <-- TODO Fix this hardcoded!
-                  "type" => "auto"  # <-- TODO Fix this hardcoded!
-              }})
-              end
-            else  
-              rs << field.merge({
-                "allowBlank" => true,
-                "type" => "auto"
+              rs.concat(assn_fields.collect {|assn_field| 
+                extjs_field(assn_field, :mapping => field[:name])
               })
+            else  
+              rs << extjs_field(field)
             end
           else # property is a method?
-            rs << field.merge({
-              "allowBlank" => true,
-               "type" => 'auto'
-             })
+            rs << extjs_field(field)
           end
         end
         
@@ -170,15 +154,29 @@ module ExtJS
       
       ##
       # Render a column-config object
+      # @param {Hash/Column} field Field-configuration Hash, probably has :name already set and possibly Ext.data.Field options.
       # @param {ORM Column Object from AR, DM or MM}
       #
-      def extjs_render_column(col, field)
-        field["allowBlank"] = self.extjs_allow_blank(col)
-        field["type"] = self.extjs_type(col)
-        field["dateFormat"] = "c" if field["type"] === :date  # <-- ugly hack for date  
+      def extjs_field(field, config=nil)  
+        if config.kind_of? Hash
+          if mapping = config.delete(:mapping)
+            field.update(
+              :name => "#{mapping}_#{field[:name]}",
+              "mapping" => "#{mapping}.#{field[:name]}"
+            )
+          end
+          field.update(config) unless config.keys.empty?
+        elsif !config.nil?  # <-- Hopfully an ORM Column object.
+          field.update(
+            "allowBlank" => self.extjs_allow_blank(config),
+            "type" => self.extjs_type(config)
+          )
+          field["dateFormat"] = "c" if field["type"] === :date  # <-- ugly hack for date  
+        end  
+        field.update("type" => "auto") if field["type"].nil?
         field
       end
-      
+
 private
       
       ##
