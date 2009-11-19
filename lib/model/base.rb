@@ -63,14 +63,15 @@ module ExtJS
         
         return {
           "fields" => self.extjs_record_fields.collect {|f|
-            if columns[f.to_sym] || columns[f.to_s]
+            #This needs to be the first condition because the others will break if f is an Array
+            if f.is_a? Array
+              field = {:name => f.join('__'), :type => 'auto'}
+            elsif columns[f.to_sym] || columns[f.to_s]
               field = self.extjs_render_column(columns[f.to_sym] || columns[f.to_s])
               field[:dateFormat] = "c" if field[:type] === :date  # <-- ugly hack for date
               field
             elsif assn = associations[f]
               field = {:name => f, :allowBlank => true, :type => 'auto'}
-            elsif f.is_a? Array
-              field = {:name => f.join('__'), :type => 'auto'}
             else # property is a method?
               field = {:name => f, :allowBlank => true, :type => 'auto'}
             end
