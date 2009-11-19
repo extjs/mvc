@@ -6,7 +6,7 @@ module ExtJS
     module ClassMethods
       
       def extjs_primary_key
-        "id"
+        "_id"
       end
       
       def extjs_column_names
@@ -21,13 +21,17 @@ module ExtJS
         if @extjs_associations.nil?
           @extjs_associations = {}
           self.associations.keys.each do |key|
-            @extjs_associations[key.to_sym] = {:name => key, :type => self.associations[key].type}
+            @extjs_associations[key.to_sym] = {
+              :name => key, 
+              :type => self.associations[key].type,
+              :class => self.associations[key].class_name.constantize
+            }
           end
         end
         @extjs_associations
       end
       
-      def extjs_render_column(col)
+      def extjs_type(col)
         type = col.type.to_s
         case type
           when "DateTime", "Date", "Time"
@@ -40,8 +44,11 @@ module ExtJS
             type = :int
           else
             type = "auto"
-        end 
-        {:name => col.name, :type => type, :allowBlank => (col.name === '_id') ? true : (col.options[:required] === true) ? false : true }
+        end
+      end
+      
+      def extjs_allow_blank(col)
+        (col.name === '_id') ? true : (col.options[:required] === true) ? false : true
       end
     end
   end

@@ -15,28 +15,37 @@ module ExtJS
     #
     module InstanceMethods
       
-      def to_record
+      ##
+      # Converts a model instance to a record compatible with ExtJS
+      # @params {Mixed} params A list of fields to use instead of this Class's extjs_record_fields
+      #
+      def to_record(*params)
+        
+        fields = (params.empty?) ? self.class.extjs_record_fields : self.class.process_fields(*params)
         pk = self.class.extjs_primary_key
         assns = self.class.extjs_associations
-        
-        data = {pk => self.send(pk)}
-        self.class.extjs_record_fields.each do |f|
-          if refl = assns[f]
+      
+        data = {pk => self.send(pk)}  
+        fields.each do |field|
+          if refl = assns[field[:name]]
             if refl[:type] === :belongs_to
-              assn = self.send(f)
-              data[f] = (assn) ? assn.to_record : {} # <-- a thing was requested, give emtpy thing.
+              assn = self.send(field[:name])
+              if assn.respond_to?(:to_record)
+                data[field[:name]] = assn.send(:to_record, *field[:fields])
+              elsif (field[:fields])
+                data[field[:name]] = {}
+                field[:fields].each do |property|
+                  data[field[:name]][property] = assn.send(property)
+                end
+              else
+                data[field[:name]] = {} # belongs_to assn that doesn't respond to to_record and no fields list
+              end
             elsif refl[:type] === :many
-              data[f] = self.send(f).collect {|r| r.to_record}  #CAREFUL!!!!!!!!!!!!1
+              data[field[:name]] = self.send(field[:name]).collect {|r| r.to_record}  #CAREFUL!!!!!!!!!!!!1
             end
-          elsif f.is_a? Array
-            value = self
-            f.each do |method|
-              value = value.send(method)
-              break if value.nil?
-            end
-            data[f.join('__')] = value
           else
-            data[f] = self.send(f)
+            value = self.send(field[:name])
+            data[field[:name]] = value.respond_to?(:to_record) ? value.to_record : value
           end
         end
         data
@@ -51,55 +60,126 @@ module ExtJS
       # render AR columns to Ext.data.Record.create format
       # eg: {name:'foo', type: 'string'}
       #
-      def extjs_record
-        
+      def extjs_record(*fields)
         if self.extjs_record_fields.empty?
-          self.extjs_record_fields = self.extjs_column_names
+          self.extjs_fields(*self.extjs_column_names)
         end
-
+        
+        fields = fields.empty? ? self.extjs_record_fields : self.process_fields(*fields)
+        
         pk = self.extjs_primary_key
         columns = self.extjs_columns_hash
         associations = self.extjs_associations
         
-        return {
-          "fields" => self.extjs_record_fields.collect {|f|
-            #This needs to be the first condition because the others will break if f is an Array
-            if f.is_a? Array
-              field = {:name => f.join('__'), :type => 'auto'}
-            elsif columns[f.to_sym] || columns[f.to_s]
-              field = self.extjs_render_column(columns[f.to_sym] || columns[f.to_s])
-              field[:dateFormat] = "c" if field[:type] === :date  # <-- ugly hack for date
-              field
-            elsif assn = associations[f]
-              field = {:name => f, :allowBlank => true, :type => 'auto'}
-            else # property is a method?
-              field = {:name => f, :allowBlank => true, :type => 'auto'}
+        rs = []
+        fields.each do |field|
+          field = field.dup
+          if columns[field[:name]] || columns[field[:name].to_s]  # <-- column on this model
+            rs << self.extjs_render_column(columns[field[:name]] || columns[field[:name].to_s], field)      
+          elsif assn = associations[field[:name] || field[:name].to_s]
+            
+            assn_fields = field.delete(:fields) || []
+            if assn[:class].respond_to?(:extjs_record)  # <-- exec extjs_record on assn Model.
+              record = assn[:class].send(:extjs_record, *assn_fields)
+              rs.concat(record["fields"].collect {|assn_field|  
+                assn_field.update(  # <-- have to apply mapping on returned record-fields
+                  :name => "#{field[:name]}_#{assn_field[:name]}",
+                  "mapping" => "#{field[:name]}.#{assn_field[:name]}"
+                )
+              })
+            elsif assn_fields.length > 0  # <-- :parent => [:id, :name]
+              assn_fields.each do |assn_field|
+              rs.concat(assn_fields.collect {|assn_field| {
+                  "name" => "#{field[:name]}_#{assn_field}", 
+                  "mapping" => "#{field[:name]}.#{assn_field}", 
+                  "allowBlank" => true, # <-- TODO Fix this hardcoded!
+                  "type" => "auto"  # <-- TODO Fix this hardcoded!
+              }})
+              end
+            else  
+              rs << field.merge({
+                "allowBlank" => true,
+                "type" => "auto"
+              })
             end
-          },
+          else # property is a method?
+            rs << field.merge({
+              "allowBlank" => true,
+               "type" => 'auto'
+             })
+          end
+        end
+        
+        return {
+          "fields" => rs,
           "idProperty" => pk
         }
       end
       
+      ##
+      # meant to be used within a Model to define the extjs record fields.
+      # eg:
+      # class User
+      #   extjs_fields :first, :last, :email => {"sortDir" => "ASC"}, :company => [:id, :name]
+      # end
+      #
       def extjs_fields(*params)
+        self.extjs_record_fields = self.process_fields(*params)
+      end
+      
+      ##
+      # Prepare a field configuration list into a normalized array of Hashes, {:name => "field_name"} 
+      # @param {Mixed} params
+      # @return Array
+      #
+      def process_fields(*params) 
+        params = [] if params.first.nil?
         options = params.extract_options!
+        
+        fields = []
         if !options.keys.empty?
           if excludes = options.delete(:exclude)
-            self.extjs_record_fields = self.extjs_column_names.reject {|c| excludes.find {|ex| c === ex.to_s}}.collect {|c| c}
+            fields = self.create_fields(self.extjs_column_names.reject {|c| excludes.find {|ex| c === ex.to_s}}.collect {|c| c})
           elsif only = options.delete(:only)
-            self.extjs_record_fields = only
+            fields = self.create_fields(only)
+          else
+            options.keys.each do |k|  # <-- :email => {"sortDir" => "ASC"}
+              if options[k].is_a? Hash
+                options[k][:name] = k.to_sym
+                fields << options[k]
+              elsif options[k].is_a? Array # <-- :parent => [:id, :name]
+                fields << {
+                  :name => k.to_sym,
+                  :fields => options[k]
+                }
+              end
+            end
           end
-          self.extjs_record_fields.concat(process_association_fields(options))
+          #self.extjs_record_fields.concat(process_association_fields(options))
         elsif params.empty?
           return self.extjs_record_fields
         end
-
-        self.extjs_record_fields.concat(params) if !params.empty?
-
-        #Append primary key if it's not included
-        # I don't think we want to automatically include :id
-        # Chris
-        #self.extjs_record_fields << self.primary_key.to_sym if !self.extjs_record_fields.include?(self.primary_key.to_sym)
+        
+        unless params.empty?
+          fields.concat(params.collect {|f|
+            {:name => f.to_sym}
+          })
+        end
+        fields
       end
+      
+      ##
+      # Render a column-config object
+      # @param {ORM Column Object from AR, DM or MM}
+      #
+      def extjs_render_column(col, field)
+        field["allowBlank"] = self.extjs_allow_blank(col)
+        field["type"] = self.extjs_type(col)
+        field["dateFormat"] = "c" if field["type"] === :date  # <-- ugly hack for date  
+        field
+      end
+      
+private
       
       ##
       # Prepare the config for fields with '.' in their names

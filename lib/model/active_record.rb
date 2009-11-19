@@ -3,7 +3,7 @@ module ExtJS
     module ClassMethods
       
       def extjs_primary_key
-        self.primary_key
+        self.primary_key.to_sym
       end
       
       def extjs_column_names
@@ -14,7 +14,11 @@ module ExtJS
         self.columns_hash
       end
       
-      def extjs_render_column(col)
+      def extjs_allow_blank(col)
+        col.primary
+      end
+      
+      def extjs_type(col)
         type = col.type
         case type
           when :datetime || :date || :time || :timestamp
@@ -26,7 +30,7 @@ module ExtJS
           when :decimal
             type = :float
         end
-        {:name => col.name, :allowBlank => (col.primary) ? true : col.null, :type => type}        
+        type
       end
       
       def extjs_associations
@@ -35,7 +39,11 @@ module ExtJS
           self.reflections.keys.each do |key|
             assn = self.reflections[key]
             type = (assn.macro === :has_many) ? :many : assn.macro
-            @extjs_associations[key.to_sym] = {:name => key, :type => type}
+            @extjs_associations[key.to_sym] = {
+              :name => key, 
+              :type => type, 
+              :class => assn.class_name.constantize
+            }
           end
         end        
         @extjs_associations
