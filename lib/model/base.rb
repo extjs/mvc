@@ -113,6 +113,26 @@ module ExtJS
         end
         results
       end
+
+      ##
+      # Returns an array of symbolized association names that will be referenced by a call to to_record
+      # i.e. [:parent1, :parent2]
+      #
+      def extjs_used_associations
+        if @extjs_used_associations.nil?
+          assoc = []
+          self.extjs_record_fields.each do |f|
+            #This needs to be the first condition because the others will break if f is an Array
+            if f.is_a? Array
+              assoc << f.first
+            elsif extjs_associations[f]
+              assoc << f
+            end
+          end
+          @extjs_used_associations = assoc.uniq
+        end
+        @extjs_used_associations
+      end
     end
   end
 end
