@@ -1,3 +1,6 @@
+##
+# DataMapper adapter for ExtJS::Model mixin
+#
 module ExtJS
   module Model
     module ClassMethods
@@ -20,8 +23,11 @@ module ExtJS
         @extjs_columns_hash
       end
       
-      def extjs_render_column(col)
-        pk = self.key.first
+      def extjs_allow_blank(col)
+         (col === pk) ? true : col.nullable?
+      end
+      
+      def extjs_type(col)
         type = ((col.type.respond_to?(:primitive)) ? col.type.primitive : col.type).to_s
         case type
           when "DateTime", "Date", "Time"
@@ -34,8 +40,7 @@ module ExtJS
             type = :int
           else
             type = "auto"
-        end 
-        {:name => col.name.to_s, :type => type, :allowBlank => (col === pk) ? true : col.nullable? }
+        end
       end
       
       def extjs_associations

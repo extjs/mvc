@@ -5,9 +5,19 @@ module ExtJS
       model.send(:extend, ClassMethods)
       model.send(:include, InstanceMethods)
       model.class_eval do
+        ##
+        # @config {Array} List of DataReader fields to render.  This should probably not be a cattr_accessor
+        # since it's only used internally.  The user adds fields via the Class method extjs_fields instead.
+        #
         cattr_accessor :extjs_record_fields
+        ##
+        # @config {String} extjs_mapping_template This a template used to render mapped field-names.
+        # One could use the Rails standard "{association}[{property}]" as well.
+        #
+        cattr_accessor :extjs_mapping_template
       end
       model.extjs_record_fields = []
+      model.extjs_mapping_template = "{association}_{property}"
     end
 
     ##
@@ -35,7 +45,7 @@ module ExtJS
               elsif (field[:fields])
                 data[field[:name]] = {}
                 field[:fields].each do |property|
-                  data[field[:name]][property] = assn.send(property)
+                  data[field[:name]][property] = assn.send(property) if assn.respond_to?(property)
                 end
               else
                 data[field[:name]] = {} # belongs_to assn that doesn't respond to to_record and no fields list
@@ -160,9 +170,9 @@ module ExtJS
       def extjs_field(field, config=nil)  
         if config.kind_of? Hash
           if mapping = config.delete(:mapping)
-            field.update(
-              :name => "#{mapping}_#{field[:name]}",
-              "mapping" => "#{mapping}.#{field[:name]}"
+            field.update( # <-- We use a template for rendering mapped field-names.
+              :name => self.extjs_mapping_template.gsub(/\{association\}/, mapping.to_s).gsub(/\{property\}/, field[:name].to_s),
+              "mapping" => "#{mapping.to_s}.#{field[:name]}"
             )
           end
           field.update(config) unless config.keys.empty?
@@ -171,7 +181,7 @@ module ExtJS
             "allowBlank" => self.extjs_allow_blank(config),
             "type" => self.extjs_type(config)
           )
-          field["dateFormat"] = "c" if field["type"] === :date  # <-- ugly hack for date  
+          field["dateFormat"] = "c" if field["type"] === :date && field["dateFormat"].nil? # <-- ugly hack for date  
         end  
         field.update("type" => "auto") if field["type"].nil?
         field

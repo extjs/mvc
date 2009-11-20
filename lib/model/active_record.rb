@@ -1,3 +1,6 @@
+##
+# ActiveRecord adapter to ExtJS::Model mixin.
+#
 module ExtJS
   module Model
     module ClassMethods
@@ -14,10 +17,20 @@ module ExtJS
         self.columns_hash
       end
       
+      ##
+      # determine if supplied Column object is nullable
+      # @param {ActiveRecord::ConnectionAdapters::Column}
+      # @return {Boolean}
+      #
       def extjs_allow_blank(col)
         col.primary
       end
       
+      ##
+      # determine datatype of supplied Column object
+      # @param {ActiveRecord::ConnectionAdapters::Column}
+      # @return {Symbol}
+      #
       def extjs_type(col)
         type = col.type
         case type
@@ -33,6 +46,10 @@ module ExtJS
         type
       end
       
+      ##
+      # return a simple, normalized list of AR associations having the :name, :type and association class
+      # @return {Array}
+      #
       def extjs_associations
         if @extjs_associations.nil?
           @extjs_associations = {}

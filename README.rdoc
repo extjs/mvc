@@ -1,37 +1,47 @@
 = mvc
 
 
-A collection of helpers, MVC mixins and PORs (plain-old-ruby-object) to assist with auto-generating ExtJS javascript component definitions.
+A collection of helpers, MVC mixins and PORs (plain-old-ruby-object) to assist with auto-generating ExtJS Stores (Ext.data.Store) including its associated DataReader (Ext.data.JsonReader, Ext.data.XmlReader) and DataWriter (Ext.data.JsonWriter, Ext.data.XmlWriter).  Also contains a helper for rendering javascript component definitions via partials.
 
 
 ===Installation
-
-    % gem sources -a http://gems.github.com (you only have to do this once)
+	% sudo gem install gemcutter
+	% gem tumble   (only have to do this once, adds gemcutter as primary gem-source)
     % sudo gem install extjs-mvc
 
-In <tt>environment.rb</tt>
+<p><b>Rails Installation:</b></p>
+In <tt>environment.rb</tt>, 
 
     Rails::Initializer.run do |config|
         config.gem "extjs-mvc"
     end
 
+<p><b>Merb installation:</b></p>
+In <tt>config/dependencies.rb</tt>, Add extjs-mvc as a new dependency
+	
+	dependency "extjs-mvc"
 
-=== An ActiveRecord mixin:  ExtJS::Model
+=== An ORM Model mixin:  ExtJS::Model
+extjs-mvc contains Model mixin named <tt>ExtJS::Model</tt> which works for <b>three</b> popular ORM frameworks, ActiveRecord, DataMapper and MongoMapper.  The API for each framework is identical.
 
-include it in your model.  Use the class-method <tt>extjs_fields</tt> to specify those
+Simply include the mixin into your model.  Use the class-method <tt>extjs_fields</tt> to specify those
 fields with will be used to render the <tt>Ext.data.Record.create</tt> field-def'n.
+
     class User < ActiveRecord::Base
       include ExtJS::Model
 
       extjs_fields :exclude => [:password, :password_confirmation]
-      # OR
+      # OR 
       extjs_fields :name, :description
-      # OR
+      # OR define a column as a Hash
+	  extjs_fields :description, :name => {"sortDir" => "ASC"}, :created_at => {"dateFormat" => "c"}
+	  #
       extjs_fields :name, :description, :parent => [:name, :date]
-      # this would configure associated columns with names like "parent__name" and "parent__date")
+      # this would configure associated columns with names like:
+ 		[...{name: "parent_name", mapping: "parent.name"}, {name: "parent_date", mapping: "parent.date"}...]
     end
 
-In script/console
+In <tt>irb</tt> console:
     >> User.extjs_fields
     >> User.extjs_record
     => { "idProperty"=>"id", "fields"=>[
@@ -42,13 +52,13 @@ In script/console
        ]}
 
 === An ActionController mixin:  ExtJS::Controller
-
+The <tt>extjs-mvc</tt> Gem includes a framework agnostic Controller mixin which works with both Rails and Merb.
 <b>usage:</b>
 
     class UsersController < ActionController::Base
         include ExtJS::Controller
     end
-
+	
 === View Helper:  ExtJS::Helpers::Component
 
 <b>usage:</b>

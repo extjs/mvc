@@ -1,3 +1,6 @@
+##
+# MongoMapper adapter to ExtJS::Model mixin
+#
 module ExtJS
   module Model
     ##
@@ -6,7 +9,7 @@ module ExtJS
     module ClassMethods
       
       def extjs_primary_key
-        "_id"
+        :_id
       end
       
       def extjs_column_names
