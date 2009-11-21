@@ -9,14 +9,14 @@ A collection of helpers, MVC mixins and PORs (plain-old-ruby-object) to assist w
 	% gem tumble   (only have to do this once, adds gemcutter as primary gem-source)
     % sudo gem install extjs-mvc
 
-<p><b>Rails Installation:</b></p>
+<b>Rails Installation:</b>
 In <tt>environment.rb</tt>, 
 
     Rails::Initializer.run do |config|
         config.gem "extjs-mvc"
     end
 
-<p><b>Merb installation:</b></p>
+<b>Merb installation:</b>
 In <tt>config/dependencies.rb</tt>, Add extjs-mvc as a new dependency
 	
 	dependency "extjs-mvc"
@@ -42,7 +42,6 @@ fields with will be used to render the <tt>Ext.data.Record.create</tt> field-def
     end
 
 In <tt>irb</tt> console:
-    >> User.extjs_fields
     >> User.extjs_record
     => { "idProperty"=>"id", "fields"=>[
          {:type=>:int, :allowBlank=>true, :name=>"id"},
@@ -93,12 +92,13 @@ Renders an  Ext.data.Store with helper method <tt>extjs_store</tt>
       helper ExtJS::Helpers::Store
     end
 
+Now render a store in an erb template:
 
     @store = extjs_store(
       :controller => "users",
       :proxy => "http"  # <-- default
       :format => "json" # <-- default
-      :model => "user", # <-- default: controller_name.singularize.camelize.constantize
+      :model => "user", # <-- default: controller_name.singularize
       :writer => {:encode => false},
       :config => {      # <-- standard Ext.data.Store config-params
         "autoLoad" => true
