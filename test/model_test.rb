@@ -1,20 +1,29 @@
 require 'test_helper'
 
-class TestParent < ActiveRecord::Base
-
-end
-
-class TestModel < ActiveRecord::Base
-  include ExtJS::Model
-  belongs_to :test_parent
-
-  #for the EXT Store configuration
-  extjs_fields :name, :test_parent => [:name]
-end
 
 class ModelTest < Test::Unit::TestCase
-  def test_field_list_for_associations
-    assert_equal [[:test_parent, :name], :name, :id], TestModel.extjs_fields
+  context "A Model instance" do
+
+	  setup do
+	    # common stuff for all tests.
+	  end
+
+	  should "Person should render a Reader config" do
+	    reader = Person.extjs_record
+	    assert reader.kind_of?(Hash) && reader.has_key?("fields") && reader.has_key?("idProperty")
+	  end
+	  
+	  should "User should render a Reader config" do
+	    reader = User.extjs_record
+	    assert reader.kind_of?(Hash) && reader.has_key?("fields") && reader.has_key?("idProperty")
+	  end
+	  
+	  should "User instance should render with to_record, a Hash containing at least a primary_key" do
+	    rec = User.first.to_record
+	    assert rec.kind_of?(Hash) && rec.keys.include?(User.extjs_primary_key)
+	  end
+	  
   end
+  
 end
 

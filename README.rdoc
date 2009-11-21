@@ -30,7 +30,7 @@ fields with will be used to render the <tt>Ext.data.Record.create</tt> field-def
   class User < ActiveRecord::Base
     include ExtJS::Model
 
-	extjs_fields :exclude => [:password, :password_confirmation]
+    extjs_fields :exclude => [:password, :password_confirmation]
     
     # OR 
     extjs_fields :name, :description
@@ -38,7 +38,7 @@ fields with will be used to render the <tt>Ext.data.Record.create</tt> field-def
     # OR define a column as a Hash
     extjs_fields :description, :name => {"sortDir" => "ASC"}, :created_at => {"dateFormat" => "c"}
 	
-	# OR render associations, association-fields will have their "mapping" property set automatically
+    # OR render associations, association-fields will have their "mapping" property set automatically
     extjs_fields :name, :description, :company => [:name, :description]
     
   end
