@@ -149,7 +149,7 @@ module ExtJS
               end
             end
           end
-          #self.extjs_record_fields.concat(process_association_fields(options))
+
         elsif params.empty?
           return self.extjs_record_fields
         end
@@ -187,21 +187,6 @@ module ExtJS
         field
       end
 
-private
-      
-      ##
-      # Prepare the config for fields with '.' in their names
-      #
-      def process_association_fields(options)
-        results = []
-        options.each do |assoc, fields|
-          fields.each do |field|
-            results << [assoc, field]
-          end
-        end
-        results
-      end
-
       ##
       # Returns an array of symbolized association names that will be referenced by a call to to_record
       # i.e. [:parent1, :parent2]
@@ -211,10 +196,8 @@ private
           assoc = []
           self.extjs_record_fields.each do |f|
             #This needs to be the first condition because the others will break if f is an Array
-            if f.is_a? Array
-              assoc << f.first
-            elsif extjs_associations[f]
-              assoc << f
+            if extjs_associations[f[:name]]
+              assoc << f[:name]
             end
           end
           @extjs_used_associations = assoc.uniq

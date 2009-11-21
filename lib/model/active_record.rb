@@ -23,7 +23,7 @@ module ExtJS
       # @return {Boolean}
       #
       def extjs_allow_blank(col)
-        col.primary
+        col.null
       end
       
       ##
