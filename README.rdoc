@@ -27,21 +27,21 @@ extjs-mvc contains Model mixin named <tt>ExtJS::Model</tt> which works for <b>th
 Simply include the mixin into your model.  Use the class-method <tt>extjs_fields</tt> to specify those
 fields with will be used to render the <tt>Ext.data.Record.create</tt> field-def'n.
 
-    class User < ActiveRecord::Base
-      include ExtJS::Model
+	class User < ActiveRecord::Base
+	  include ExtJS::Model
 
-      extjs_fields :exclude => [:password, :password_confirmation]
+	  extjs_fields :exclude => [:password, :password_confirmation]
       # OR 
       extjs_fields :name, :description
       # OR define a column as a Hash
 	  extjs_fields :description, :name => {"sortDir" => "ASC"}, :created_at => {"dateFormat" => "c"}
-	  #
+	  # OR
       extjs_fields :name, :description, :parent => [:name, :date]
       # this would configure associated columns with names like:
- 		[...{name: "parent_name", mapping: "parent.name"}, {name: "parent_date", mapping: "parent.date"}...]
+      [...{name: "parent_name", mapping: "parent.name"}, {name: "parent_date", mapping: "parent.date"}...]
     end
 
-In <tt>irb</tt> console:
+After including the model mixin <tt>ExtJS::Model</tt>, try typing the following in <tt>irb</tt> console:
     >> User.extjs_record
     => { "idProperty"=>"id", "fields"=>[
          {:type=>:int, :allowBlank=>true, :name=>"id"},
@@ -50,8 +50,10 @@ In <tt>irb</tt> console:
          {:type=>:string, :allowBlank=>false, :name=>"email"}
        ]}
 
+An auto-generated <tt>Ext.data.JsonReader</tt> configuration!
+
 === An ActionController mixin:  ExtJS::Controller
-The <tt>extjs-mvc</tt> Gem includes a framework agnostic Controller mixin which works with both Rails and Merb.
+The <tt>extjs-mvc</tt> Gem includes a framework agnostic Controller mixin which works with both Rails and Merb.  Include this mixin into any controller which will need to generate an <tt>Ext.data.Store</tt>.
 <b>usage:</b>
 
     class UsersController < ActionController::Base
@@ -70,7 +72,7 @@ The <tt>extjs-mvc</tt> Gem includes a framework agnostic Controller mixin which 
 Now render Ext components using helper method <tt>extjs_component</tt>
 
     @viewport = extjs_component(
-      "xtype" =&gt; "viewport",
+      "xtype" => "viewport",
       "frame" =&gt; true,
       "layout" =&gt; "border")
     @viewport.add("xtype" =&gt; "panel", "contentEl" =&gt; "hd", "region" =&gt; "north", "height" =&gt; 30)
