@@ -2,7 +2,7 @@
 
 A collection of helpers, MVC mixins and PORs (plain-old-ruby-object) to assist with auto-generating ExtJS Stores (Ext.data.Store) including its associated DataReader (Ext.data.JsonReader, Ext.data.XmlReader) and DataWriter (Ext.data.JsonWriter, Ext.data.XmlWriter).  Also contains a helper for rendering javascript component definitions via partials.
 
-See tutorial <a href="http://www.extjs.com/blog/2009/09/30/ext-js-on-rails-a-comprehensivetutorial/">Here</a>
+See tutorial http://www.extjs.com/blog/2009/09/30/ext-js-on-rails-a-comprehensivetutorial/ Here
 
 ===Installation
 	% sudo gem install gemcutter
