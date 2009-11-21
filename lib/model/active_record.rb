@@ -34,7 +34,7 @@ module ExtJS
       def extjs_type(col)
         type = col.type
         case type
-          when :datetime || :date || :time || :timestamp
+          when :datetime, :date, :time, :timestamp
             type = :date
           when :text
             type = :string
