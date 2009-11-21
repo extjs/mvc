@@ -27,7 +27,8 @@ module ExtJS
             @extjs_associations[key.to_sym] = {
               :name => key, 
               :type => self.associations[key].type,
-              :class => self.associations[key].class_name.constantize
+              :class => self.associations[key].class_name.constantize,
+              :foreign_key => self.associations[key].foreign_key
             }
           end
         end

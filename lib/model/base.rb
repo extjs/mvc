@@ -17,7 +17,7 @@ module ExtJS
         cattr_accessor :extjs_mapping_template
       end
       model.extjs_record_fields = []
-      model.extjs_mapping_template = "{association}_{property}"
+      model.extjs_mapping_template = "_{property}"
     end
 
     ##
@@ -31,17 +31,19 @@ module ExtJS
       #
       def to_record(*params)
         
-        fields = (params.empty?) ? self.class.extjs_record_fields : self.class.process_fields(*params)
-        pk = self.class.extjs_primary_key
-        assns = self.class.extjs_associations
-      
-        data = {pk => self.send(pk)}  
+        fields  = (params.empty?) ? self.class.extjs_record_fields : self.class.process_fields(*params)
+        assns   = self.class.extjs_associations
+        pk      = self.class.extjs_primary_key
+        
+        # build the initial field data-hash
+        data    = {pk => self.send(pk)}
+         
         fields.each do |field|
-          if refl = assns[field[:name]]
+          if refl = assns[field[:name]] || assns[field[:name].to_sym]
             if refl[:type] === :belongs_to
               assn = self.send(field[:name])
               if assn.respond_to?(:to_record)
-                data[field[:name]] = assn.send(:to_record, *field[:fields])
+                data[field[:name]] = assn.send(:to_record, *[field[:fields]])
               elsif (field[:fields])
                 data[field[:name]] = {}
                 field[:fields].each do |property|
@@ -75,30 +77,37 @@ module ExtJS
           self.extjs_fields(*self.extjs_column_names)
         end
         
-        fields = fields.empty? ? self.extjs_record_fields : self.process_fields(*fields)
+        associations  = self.extjs_associations
+        columns       = self.extjs_columns_hash
+        fields        = fields.empty? ? self.extjs_record_fields : self.process_fields(*fields)  
+        pk            = self.extjs_primary_key
+        rs            = []
         
-        pk = self.extjs_primary_key
-        columns = self.extjs_columns_hash
-        associations = self.extjs_associations
-        
-        rs = []
         fields.each do |field|
           field = field.dup
-          if columns[field[:name]] || columns[field[:name].to_s]  # <-- column on this model                
-            rs << self.extjs_field(field, columns[field[:name]] || columns[field[:name].to_s])      
-          elsif assn = associations[field[:name] || field[:name].to_s]
-            assn_fields = field.delete(:fields) || []
+          
+          if col = columns[field[:name]] || columns[field[:name].to_sym]  # <-- column on this model                
+            rs << self.extjs_field(field, col)      
+          elsif assn = associations[field[:name]] || associations[field[:name].to_sym]
+            assn_fields = field.delete(:fields) || nil
             if assn[:class].respond_to?(:extjs_record)  # <-- exec extjs_record on assn Model.
-              rs.concat(assn[:class].send(:extjs_record, *assn_fields)["fields"].collect {|assn_field| 
+              record = assn[:class].send(:extjs_record, *[assn_fields])
+              rs.concat(record["fields"].collect {|assn_field| 
                 extjs_field(assn_field, :mapping => field[:name])
               })
-            elsif assn_fields.length > 0  # <-- :parent => [:id, :name]
+            elsif assn_fields  # <-- :parent => [:id, :name]
               rs.concat(assn_fields.collect {|assn_field| 
                 extjs_field(assn_field, :mapping => field[:name])
               })
             else  
               rs << extjs_field(field)
             end
+            
+            # attach association's foreign_key if not already included.
+            if (col = columns[assn[:foreign_key]] || columns[assn[:foreign_key].to_s]) && !rs.include?({:name => assn[:foreign_key].to_s})
+              rs << extjs_field({:name => assn[:foreign_key]}, col)
+            end
+            
           else # property is a method?
             rs << extjs_field(field)
           end
@@ -130,6 +139,15 @@ module ExtJS
         params = [] if params.first.nil?
         options = params.extract_options!
         
+        # Return immediately if pre-processed fields are detected.
+        # ie: [ [{:name => 'foo'}, {:name => 'bar'}] ]
+        # This is to handle the case where extjs_record and to_record are called recursively, in which case
+        # these fields have already been processed.
+        #
+        if params.length === 1 && params.first.kind_of?(Array) && !params.first.empty?
+          return params.first
+        end
+        
         fields = []
         if !options.keys.empty?
           if excludes = options.delete(:exclude)
@@ -139,24 +157,23 @@ module ExtJS
           else
             options.keys.each do |k|  # <-- :email => {"sortDir" => "ASC"}
               if options[k].is_a? Hash
-                options[k][:name] = k.to_sym
+                options[k][:name] = k.to_s
                 fields << options[k]
               elsif options[k].is_a? Array # <-- :parent => [:id, :name]
                 fields << {
-                  :name => k.to_sym,
-                  :fields => options[k]
+                  :name => k.to_s,
+                  :fields => process_fields(*options[k])
                 }
               end
             end
           end
-
         elsif params.empty?
           return self.extjs_record_fields
         end
         
         unless params.empty?
           fields.concat(params.collect {|f|
-            {:name => f.to_sym}
+            {:name => f.to_s}
           })
         end
         fields
@@ -171,7 +188,7 @@ module ExtJS
         if config.kind_of? Hash
           if mapping = config.delete(:mapping)
             field.update( # <-- We use a template for rendering mapped field-names.
-              :name => self.extjs_mapping_template.gsub(/\{association\}/, mapping.to_s).gsub(/\{property\}/, field[:name].to_s),
+              :name => mapping + self.extjs_mapping_template.gsub(/\{property\}/, field[:name]),
               "mapping" => "#{mapping.to_s}.#{field[:name]}"
             )
           end
