@@ -2,7 +2,7 @@ require 'test_helper'
 
 
 class ModelTest < Test::Unit::TestCase
-  context "A Model instance" do
+  context "Calling extjs_record upon Person and User" do
 
 	  setup do
 	    # common stuff for all tests.
@@ -24,7 +24,7 @@ class ModelTest < Test::Unit::TestCase
 	  end
   end
   
-  context "A User with with Person relationship: User.extjs_fields(:password, :person => [:first, :last])" do
+  context "A User with Person relationship: User.extjs_fields(:password, :person => [:first, :last])" do
     setup do
       User.extjs_fields(:password, :person => [:first, :last])
 	    @fields = User.extjs_record["fields"]
