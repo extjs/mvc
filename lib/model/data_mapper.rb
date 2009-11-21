@@ -24,7 +24,7 @@ module ExtJS
       end
       
       def extjs_allow_blank(col)
-         (col === pk) ? true : col.nullable?
+         (col === self.key.first) ? true : col.nullable?
       end
       
       def extjs_type(col)
@@ -48,8 +48,12 @@ module ExtJS
           @extjs_associations = {}
           self.relationships.keys.each do |key|
             assn = self.relationships[key]
-            type = (assn.options[:max].nil? && assn.options[:min].nil?) ? :belongs_to : (assn.options[:max] > 1) ? :many : nil 
-            @extjs_associations[key.to_sym] = {:name => key, :type => type}
+            @extjs_associations[key.to_sym] = {
+              :name => key, 
+              :type => type = (assn.options[:max].nil? && assn.options[:min].nil?) ? :belongs_to : (assn.options[:max] > 1) ? :many : nil ,
+              :class => assn.parent_model,
+              :foreign_key => assn.child_key.first.name
+            }
           end
         end
         @extjs_associations

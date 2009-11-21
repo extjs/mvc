@@ -151,9 +151,9 @@ module ExtJS
         fields = []
         if !options.keys.empty?
           if excludes = options.delete(:exclude)
-            fields = self.create_fields(self.extjs_column_names.reject {|c| excludes.find {|ex| c === ex.to_s}}.collect {|c| c})
+            fields = self.process_fields(self.extjs_column_names.reject {|c| excludes.find {|ex| c === ex.to_s}}.collect {|c| c})
           elsif only = options.delete(:only)
-            fields = self.create_fields(only)
+            fields = self.process_fields(only)
           else
             options.keys.each do |k|  # <-- :email => {"sortDir" => "ASC"}
               if options[k].is_a? Hash
