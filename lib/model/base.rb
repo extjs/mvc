@@ -43,7 +43,7 @@ module ExtJS
             if refl[:type] === :belongs_to
               assn = self.send(field[:name])
               if assn.respond_to?(:to_record)
-                data[field[:name]] = assn.send(:to_record, *[field[:fields]])
+                data[field[:name]] = assn.to_record field[:fields]
               elsif (field[:fields])
                 data[field[:name]] = {}
                 field[:fields].each do |property|
@@ -91,7 +91,7 @@ module ExtJS
           elsif assn = associations[field[:name]] || associations[field[:name].to_sym]
             assn_fields = field.delete(:fields) || nil
             if assn[:class].respond_to?(:extjs_record)  # <-- exec extjs_record on assn Model.
-              record = assn[:class].send(:extjs_record, *[assn_fields])
+              record = assn[:class].extjs_record(assn_fields)
               rs.concat(record["fields"].collect {|assn_field| 
                 extjs_field(assn_field, :mapping => field[:name])
               })
