@@ -24,9 +24,9 @@ class ModelTest < Test::Unit::TestCase
 	  end
   end
   
-  context "A User with Person relationship: User.extjs_fields(:password, :person => [:first, :last])" do
+  context "A User with Person relationship: User.extjs_fields(:password, :person => [:first, {:last => {'sortDir' => 'ASC'}}])" do
     setup do
-      User.extjs_fields(:password, :person => [:first, :last])
+      User.extjs_fields(:password, :person => [:first, {:last => {"sortDir" => "ASC"}}])
 	    @fields = User.extjs_record["fields"]
     end
     
@@ -48,6 +48,10 @@ class ModelTest < Test::Unit::TestCase
     
     should "Reader fields should contain mapped field 'person.last'" do
       assert @fields.find {|f| f[:name] === "person_last" and f["mapping"] === "person.last"}
+    end
+    
+    should "person.last should have additional configuration 'sortDir' => 'ASC'" do
+      assert @fields.find {|f| f[:name] === "person_last" and f["sortDir"] === 'ASC' }
     end
     
   end
