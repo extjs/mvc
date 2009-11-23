@@ -7,25 +7,25 @@ module ExtJS
     # ClassMethods
     #
     module ClassMethods
-      
+
       def extjs_primary_key
         :_id
       end
-      
+
       def extjs_column_names
         self.column_names
       end
-      
+
       def extjs_columns_hash
         self.keys
       end
-      
+
       def extjs_associations
         if @extjs_associations.nil?
           @extjs_associations = {}
           self.associations.keys.each do |key|
             @extjs_associations[key.to_sym] = {
-              :name => key, 
+              :name => key,
               :type => self.associations[key].type,
               :class => self.associations[key].class_name.constantize,
               :foreign_key => self.associations[key].foreign_key
@@ -34,7 +34,7 @@ module ExtJS
         end
         @extjs_associations
       end
-      
+
       def extjs_type(col)
         type = col.type.to_s
         case type
@@ -50,9 +50,9 @@ module ExtJS
             type = "auto"
         end
       end
-      
+
       def extjs_allow_blank(col)
-        (col.name === '_id') ? true : (col.options[:required] === true) ? false : true
+        (col.name == '_id') || (col.options[:required] != true)
       end
     end
   end
