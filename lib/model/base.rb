@@ -39,12 +39,13 @@ module ExtJS
         pk      = self.class.extjs_primary_key
         
         # build the initial field data-hash
-        data    = {pk => self.send(pk)}
+        data    = {pk.to_s => self.send(pk)}
          
         fields.each do |field|
           if refl = assns[field[:name]] || assns[field[:name].to_sym]
             if refl[:type] === :belongs_to
               assn = self.send(field[:name])
+              
               if assn.respond_to?(:to_record)
                 data[field[:name]] = assn.to_record field[:fields]
               elsif (field[:fields])
@@ -55,6 +56,8 @@ module ExtJS
               else
                 data[field[:name]] = {} # belongs_to assn that doesn't respond to to_record and no fields list
               end
+              # Append associations foreign_key to data
+              data[refl[:foreign_key].to_s] = self.send(refl[:foreign_key])
             elsif refl[:type] === :many
               data[field[:name]] = self.send(field[:name]).collect {|r| r.to_record}  #CAREFUL!!!!!!!!!!!!1
             end
@@ -147,9 +150,9 @@ module ExtJS
         # This is to handle the case where extjs_record and to_record are called recursively, in which case
         # these fields have already been processed.
         #
-        if params.length === 1 && params.first.kind_of?(Array) && !params.first.empty?
-          return params.first
-        end
+        #if params.length === 1 && params.first.kind_of?(Array) && !params.first.empty?
+        #  return params.first
+        #end
         
         fields = []
         if !options.keys.empty?
@@ -175,9 +178,14 @@ module ExtJS
         end
         
         unless params.empty?
-          fields.concat(params.collect {|f|
-            {:name => f.to_s}
-          })
+          params = params.first if params.length == 1 && params.first.kind_of?(Array) && !params.first.empty?
+          params.each do |f|
+            if f.kind_of?(Hash)
+              fields << f
+            else
+              fields << {:name => f.to_s}
+            end
+          end
         end
         fields
       end

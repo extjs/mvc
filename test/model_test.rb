@@ -13,7 +13,7 @@ class ModelTest < Test::Unit::TestCase
 	  end
 	  should "Person instance should render with to_record, a Hash containing at least a primary_key" do
 	    rec = Person.first.to_record
-	    assert rec.kind_of?(Hash) && rec.keys.include?(Person.extjs_primary_key)
+	    assert rec.kind_of?(Hash) && rec.keys.include?(Person.extjs_primary_key.to_s)
 	  end
 	  should "User should render a Reader config" do
 	    reader = User.extjs_record
@@ -21,7 +21,12 @@ class ModelTest < Test::Unit::TestCase
 	  end
 	  should "User instance should render with to_record, a Hash containing at least a primary_key" do
 	    rec = User.first.to_record
-	    assert rec.kind_of?(Hash) && rec.keys.include?(User.extjs_primary_key)
+	    assert rec.kind_of?(Hash) && rec.keys.include?(User.extjs_primary_key.to_s)
+	  end
+	  should "User instance should render to_record containing foreign_key of Person" do
+	    rec = User.first.to_record
+	    assn = User.extjs_associations[:person]
+	    assert rec.keys.include?(assn[:foreign_key])
 	  end
 	  
   end
