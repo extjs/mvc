@@ -55,7 +55,7 @@ module ExtJS
           @extjs_associations = {}
           self.reflections.keys.each do |key|
             assn = self.reflections[key]
-            type = (assn.macro === :has_many) ? :many : assn.macro
+            type = (assn.macro === :has_many || assn.macro === :has_and_belongs_to_many) ? :many : assn.macro
             @extjs_associations[key.to_sym] = {
               :name => key, 
               :type => type, 

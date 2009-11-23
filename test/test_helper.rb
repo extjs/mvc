@@ -9,7 +9,7 @@ $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 
 require 'extjs-mvc'
-########################################
+
 gem 'sqlite3-ruby'
 
 begin
@@ -34,6 +34,10 @@ ActiveRecord::Base.establish_connection(config['test'])
 class User < ActiveRecord::Base
   include ExtJS::Model
   belongs_to :person
+  #has_many :user_groups
+  #has_many :groups, :through => :user_groups
+  has_and_belongs_to_many :groups, :join_table => :user_groups
+  
 end
 
 class Person < ActiveRecord::Base
@@ -44,11 +48,23 @@ class DataType < ActiveRecord::Base
   include ExtJS::Model
 end
 
+class UserGroup < ActiveRecord::Base
+  belongs_to :user
+  belongs_to :group
+end
+
+class Group < ActiveRecord::Base
+  has_many :users
+  include ExtJS::Model
+end
+
 class Test::Unit::TestCase
 end
 
 ##
 # build simple database
+#
+# people
 #
 ActiveRecord::Base.connection.create_table :users, :force => true do |table|
   table.column :id, :serial
@@ -57,12 +73,29 @@ ActiveRecord::Base.connection.create_table :users, :force => true do |table|
   table.column :created_at, :date
   table.column :disabled, :boolean, :default => true
 end
-
+##
+# people
+#
 ActiveRecord::Base.connection.create_table :people, :force => true do |table|
   table.column :id, :serial
   table.column :first, :string, :null => false
   table.column :last, :string, :null => false
   table.column :email, :string, :null => false
+end
+##
+# user_groups, join table
+#
+ActiveRecord::Base.connection.create_table :user_groups, :force => true do |table|
+  table.column :user_id, :integer
+  table.column :group_id, :integer
+end
+
+##
+# groups
+#
+ActiveRecord::Base.connection.create_table :groups, :force => true do |table|
+  table.column :id, :serial
+  table.column :title, :string
 end
 
 ##
@@ -83,9 +116,10 @@ ActiveRecord::Base.connection.create_table :data_types, :force => true do |table
   table.column :boolean_column, :boolean
 end
 
-
 ##
 # create a couple of related instances.
 #
 p = Person.create(:first => "Chris", :last => "Scott", :email => "chris@scott.com")
 u = User.create(:password => "1234", :person => p)
+
+
