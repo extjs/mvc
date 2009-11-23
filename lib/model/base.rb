@@ -30,6 +30,9 @@ module ExtJS
       # @params {Mixed} params A list of fields to use instead of this Class's extjs_record_fields
       #
       def to_record(*params)
+        if self.class.extjs_record_fields.empty?
+          self.class.extjs_fields(*self.class.extjs_column_names)
+        end
         
         fields  = (params.empty?) ? self.class.extjs_record_fields : self.class.process_fields(*params)
         assns   = self.class.extjs_associations
