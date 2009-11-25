@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{extjs-mvc}
-  s.version = "0.2.7"
+  s.version = "0.2.8"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Chris Scott"]
-  s.date = %q{2009-11-19}
+  s.date = %q{2009-11-25}
   s.description = %q{MVC tools to assist with ExtJS development in Rails and Merb}
   s.email = %q{christocracy@gmail.com}
   s.extra_rdoc_files = [
@@ -34,9 +34,15 @@ Gem::Specification.new do |s|
      "lib/model/base.rb",
      "lib/model/data_mapper.rb",
      "lib/model/mongo_mapper.rb",
+     "lib/test/macros.rb",
+     "test/active_record_test.rb",
      "test/component_test.rb",
      "test/controller_test.rb",
+     "test/data_mapper_test.rb",
+     "test/database.yml",
+     "test/debug.log",
      "test/model_test.rb",
+     "test/mongo_mapper.rb",
      "test/store_test.rb",
      "test/test_helper.rb"
   ]

@@ -99,11 +99,11 @@ module ExtJS
             if assn[:class].respond_to?(:extjs_record)  # <-- exec extjs_record on assn Model.
               record = assn[:class].extjs_record(assn_fields)
               rs.concat(record["fields"].collect {|assn_field| 
-                extjs_field(assn_field, :mapping => field[:name])
+                extjs_field(assn_field, :mapping => field[:name], "allowBlank" => true) # <-- allowBlank on associated data?
               })
             elsif assn_fields  # <-- :parent => [:id, :name]
               rs.concat(assn_fields.collect {|assn_field| 
-                extjs_field(assn_field, :mapping => field[:name])
+                extjs_field(assn_field, :mapping => field[:name], "allowBlank" => true)
               })
             else  
               rs << extjs_field(field)

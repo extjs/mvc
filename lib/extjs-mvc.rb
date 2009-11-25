@@ -37,8 +37,8 @@ module ExtJS
    end
 end
 
-require 'test/macros'
+#require 'test/macros'
 
-class ActiveSupport::TestCase < Test::Unit::TestCase
-  extend ExtJS::TestMacros
-end
+#class ActiveSupport::TestCase < Test::Unit::TestCase
+#  extend ExtJS::TestMacros
+#end
