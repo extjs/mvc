@@ -112,6 +112,25 @@ Now render a store in an erb template:
 
     %= @store.render %
 
+=== A Testing Mixin:  ExtJS::TestMacros
+The <tt>extjs-mvc</tt> Gem includes a small set of testing macros to help unit-test models.
+This requires the 'Shoulda' gem from thoughtbot.  Include this mixin inside the
+<tt>ActiveSupport::TestCase</tt> class in <tt>test/test_helper.rb</tt>
+
+==== Usage
+<tt>test/test_helper.rb</tt>
+    class ActiveSupport::TestCase
+      extend ExtJS::TestMacros
+      #...
+    end
+
+In individual model unit tests:
+    class ModelTest < ActiveSupport::TestCase
+      should_require_extjs_fields :name, :email, :city
+      #...
+      #other tests
+    end
+
 
 == Note on Patches/Pull Requests
 
