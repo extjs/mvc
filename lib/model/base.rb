@@ -51,7 +51,7 @@ module ExtJS
               elsif (field[:fields])
                 data[field[:name]] = {}
                 field[:fields].each do |property|
-                  data[field[:name]][property] = assn.send(property) if assn.respond_to?(property)
+                  data[field[:name]][property[:name]] = assn.send(property[:name]) if assn.respond_to?(property[:name])
                 end
               else
                 data[field[:name]] = {} # belongs_to assn that doesn't respond to to_record and no fields list
