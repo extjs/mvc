@@ -33,9 +33,6 @@ module ExtJS
 
       # Controller mixin.  Works for both Rails and Merb.
       require 'controller/controller'
-
-      # Macros for unit testing
-      require 'test/macros'
    end
 end
 
