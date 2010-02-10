@@ -59,8 +59,9 @@ module ExtJS
             @extjs_associations[key.to_sym] = {
               :name => key, 
               :type => type, 
-              :class => assn.class_name.constantize,
-              :foreign_key => assn.association_foreign_key
+              :class => assn.options[:polymorphic] ? nil : assn.class_name.constantize,
+              :foreign_key => assn.association_foreign_key,
+              :is_polymorphic => !!assn.options[:polymorphic]
             }
           end
         end        

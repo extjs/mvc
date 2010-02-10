@@ -45,19 +45,27 @@ module ExtJS
           if refl = assns[field[:name]] || assns[field[:name].to_sym]
             if refl[:type] === :belongs_to
               assn = self.send(field[:name])
-              
+
               if assn.respond_to?(:to_record)
                 data[field[:name]] = assn.to_record field[:fields]
               elsif (field[:fields])
                 data[field[:name]] = {}
                 field[:fields].each do |property|
-                  data[field[:name]][property] = assn.send(property) if assn.respond_to?(property)
+                  if property.is_a? Hash
+                    data[field[:name]][property[:name]] = assn.send(property[:name]) if assn.respond_to?(property[:name])
+                  else
+                    data[field[:name]][property] = assn.send(property) if assn.respond_to?(property)
+                  end
                 end
               else
                 data[field[:name]] = {} # belongs_to assn that doesn't respond to to_record and no fields list
               end
               # Append associations foreign_key to data
               data[refl[:foreign_key].to_s] = self.send(refl[:foreign_key])
+              if refl[:is_polymorphic]
+                foreign_type = refl[:foreign_key].to_s.gsub(/_id\Z/, '_type').to_sym
+                data[foreign_type.to_s] = self.send(foreign_type)
+              end
             elsif refl[:type] === :many
               data[field[:name]] = self.send(field[:name]).collect {|r| r.to_record}  #CAREFUL!!!!!!!!!!!!1
             end
@@ -90,12 +98,12 @@ module ExtJS
         rs            = []
         
         fields.each do |field|
-          field = field.dup
+          field = Marshal.load(Marshal.dump(field)) # making a deep copy
           
-          if col = columns[field[:name]] || columns[field[:name].to_sym]  # <-- column on this model                
+          if col = columns[field[:name]] || columns[field[:name].to_sym] # <-- column on this model                
             rs << self.extjs_field(field, col)      
           elsif assn = associations[field[:name]] || associations[field[:name].to_sym]
-            assn_fields = field.delete(:fields) || nil
+            assn_fields = field.delete(:fields)
             if assn[:class].respond_to?(:extjs_record)  # <-- exec extjs_record on assn Model.
               record = assn[:class].extjs_record(assn_fields)
               rs.concat(record["fields"].collect {|assn_field| 
@@ -113,7 +121,14 @@ module ExtJS
             if (col = columns[assn[:foreign_key]] || columns[assn[:foreign_key].to_s]) && !rs.include?({:name => assn[:foreign_key].to_s})
               rs << extjs_field({:name => assn[:foreign_key]}, col)
             end
-            
+            # attach association's type if polymorphic association and not alredy included
+            if assn[:is_polymorphic]
+              foreign_type = assn[:foreign_key].to_s.gsub(/_id\Z/, '_type').to_sym
+              if (col = columns[foreign_type] || columns[foreign_type.to_s]) &&
+                  !rs.include?({:name => foreign_type.to_s})
+                rs << extjs_field({:name => foreign_type.to_s}, col)
+              end
+            end
           else # property is a method?
             rs << extjs_field(field)
           end
@@ -142,23 +157,13 @@ module ExtJS
       # @return Array
       #
       def process_fields(*params) 
-        params = [] if params.first.nil?
         options = params.extract_options!
-        
-        # Return immediately if pre-processed fields are detected.
-        # ie: [ [{:name => 'foo'}, {:name => 'bar'}] ]
-        # This is to handle the case where extjs_record and to_record are called recursively, in which case
-        # these fields have already been processed.
-        #
-        #if params.length === 1 && params.first.kind_of?(Array) && !params.first.empty?
-        #  return params.first
-        #end
         
         fields = []
         if !options.keys.empty?
-          if excludes = options.delete(:exclude)
-            fields = self.process_fields(self.extjs_column_names.reject {|c| excludes.find {|ex| c === ex.to_s}}.collect {|c| c})
-          elsif only = options.delete(:only)
+          if excludes = options.delete(:exclude) && exclude.kind_of?(Array)
+            fields = self.process_fields(self.extjs_column_names - excludes.map(&:to_s))
+          elsif only = options.delete(:only) && only.kind_of?(Array)
             fields = self.process_fields(only)
           else
             options.keys.each do |k|  # <-- :email => {"sortDir" => "ASC"}
@@ -177,16 +182,14 @@ module ExtJS
           return self.extjs_record_fields
         end
         
-        unless params.empty?
-          params = params.first if params.length == 1 && params.first.kind_of?(Array) && !params.first.empty?
-          params.each do |f|
-            if f.kind_of?(Hash)
-              fields << f
-            else
-              fields << {:name => f.to_s}
-            end
+        params.flatten(1).compact.each do |f|
+          if f.kind_of?(Hash)
+            fields << f
+          else
+            fields << {:name => f.to_s}
           end
         end
+        
         fields
       end
       

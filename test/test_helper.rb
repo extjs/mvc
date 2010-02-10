@@ -41,6 +41,7 @@ class User < ActiveRecord::Base
 end
 
 class Person < ActiveRecord::Base
+  has_one :user
   include ExtJS::Model
 end
 
@@ -55,6 +56,15 @@ end
 
 class Group < ActiveRecord::Base
   has_many :users
+  include ExtJS::Model
+end
+
+class Location < ActiveRecord::Base
+  has_one :address, :as => :addressable
+  #include ExtJS::Model
+end
+class Address < ActiveRecord::Base
+  belongs_to :addressable, :polymorphic => true
   include ExtJS::Model
 end
 
@@ -96,6 +106,24 @@ end
 ActiveRecord::Base.connection.create_table :groups, :force => true do |table|
   table.column :id, :serial
   table.column :title, :string
+end
+
+##
+# locations
+#
+ActiveRecord::Base.connection.create_table :locations, :force => true do |table|
+  table.column :id, :serial
+  table.column :name, :string
+end
+
+##
+# addresses
+#
+ActiveRecord::Base.connection.create_table :addresses, :force => true do |table|
+  table.column :id, :serial
+  table.column :addressable_type, :string
+  table.column :addressable_id, :integer
+  table.column :street, :string
 end
 
 ##

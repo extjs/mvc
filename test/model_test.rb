@@ -72,6 +72,17 @@ class ModelTest < Test::Unit::TestCase
     should "person.last should have additional configuration 'sortDir' => 'ASC'" do
       assert @fields.find {|f| f[:name] === "person_last" and f["sortDir"] === 'ASC' }
     end
+    
+    should "produce a valid to_record record" do
+      person = Person.create!(:first => 'first', :last => 'last', :email => 'email')
+      user = User.create!(:person_id => person.id, :password => 'password')
+      record = user.to_record
+      assert_equal(user.id, record['id'])
+      assert_equal(person.id, record['person_id'])
+      assert_equal('password', record['password'])
+      assert_equal('last', record['person']['last'])
+      assert_equal('first', record['person']['first'])
+    end
   end
   
   context "Fields should render with correct, ExtJS-compatible data-types" do
@@ -108,6 +119,40 @@ class ModelTest < Test::Unit::TestCase
     end
     should "Understand DEFAULT" do # TODO implement this.
       assert @fields.find {|f| f[:name] === 'default_column' && f["default"] === true}
+    end
+  end
+  
+  context "polymorphic assosiations should work" do
+
+    should "return nil as class for a polymorphic relation" do
+      assert_equal(nil, Address.extjs_associations[:addressable][:class])
+    end
+    
+    should "create a proper default store config" do
+      Address.extjs_fields
+      fields = Address.extjs_record["fields"]
+      assert fields.find {|f| f[:name] === 'addressable_id' && !f["mapping"] }
+      assert fields.find {|f| f[:name] === 'addressable_type' && !f["mapping"] }
+    end
+    
+    should "create the right store config when including members of the polymorpic association" do
+      Address.extjs_fields :street, :addressable => [:name]
+      fields = Address.extjs_record['fields']
+      assert fields.find {|f| f[:name] === 'addressable_name' && f["mapping"] === 'addressable.name'}
+      assert fields.find {|f| f[:name] === 'addressable_id' && !f["mapping"] }
+      assert fields.find {|f| f[:name] === 'addressable_type' && !f["mapping"] }
+    end
+    
+    should "fill in the right values for to_record" do
+      Address.extjs_fields :street, :addressable => [:name]
+      location = Location.create!(:name => 'Home')
+      address = location.create_address(:street => 'Main Street 1')
+      record = address.to_record
+      assert_equal({"name"=>"Home"}, record["addressable"])
+      assert_equal("Location", record["addressable_type"])
+      assert_equal(location.id, record["addressable_id"])
+      assert_equal(address.id, record["id"])
+      assert_equal("Main Street 1", record["street"])
     end
   end
   
