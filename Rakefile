@@ -10,7 +10,7 @@ begin
     gem.email = "christocracy@gmail.com"
     gem.homepage = "http://github.com/extjs/mvc"
     gem.authors = ["Chris Scott"]
-    gem.add_development_dependency "thoughtbot-shoulda"
+    gem.add_development_dependency "shoulda"
     gem.test_files = []
     gem.files =  FileList["[A-Z]*", "{bin,generators,lib,test}/**/*", 'lib/jeweler/templates/.gitignore']
 
