@@ -4,20 +4,14 @@ module ExtJS
     def self.included(model)
       model.send(:extend, ClassMethods)
       model.send(:include, InstanceMethods)
-      model.class_eval do
-        ##
-        # @config {Array} List of DataReader fields to render.  This should probably not be a cattr_accessor
-        # since it's only used internally.  The user adds fields via the Class method extjs_fields instead.
-        #
-        cattr_accessor :extjs_record_fields
-        ##
-        # @config {String} extjs_mapping_template This a template used to render mapped field-names.
-        # One could use the Rails standard "{association}[{property}]" as well.
-        #
-        cattr_accessor :extjs_mapping_template
-      end
-      model.extjs_record_fields = []
-      model.extjs_mapping_template = "_{property}"
+      ##
+      # @config {String} extjs_parent_trail_template This a template used to render mapped field-names.
+      # Default is Proc.new{ |field_name| "_#{field_name}" }
+      # You could also use the Rails standard
+      # Proc.new{ |field_name| "[#{field_name}]" }
+      #
+      model.cattr_accessor :extjs_parent_trail_template
+      model.extjs_parent_trail_template = Proc.new{ |field_name| "_#{field_name}" } if model.extjs_parent_trail_template.nil?
     end
 
     ##
@@ -30,49 +24,51 @@ module ExtJS
       # @params {Mixed} params A list of fields to use instead of this Class's extjs_record_fields
       #
       def to_record(*params)
-        if self.class.extjs_record_fields.empty?
-          self.class.extjs_fields(*self.class.extjs_column_names)
+        fieldset, params = self.class.extjs_extract_fieldset! params
+        
+        fields = []
+        if params.empty?
+          fields = self.class.extjs_get_fields_for_fieldset(fieldset)
+        else
+          fields = self.class.process_fields(*params)
         end
         
-        fields  = (params.empty?) ? self.class.extjs_record_fields : self.class.process_fields(*params)
         assns   = self.class.extjs_associations
         pk      = self.class.extjs_primary_key
         
         # build the initial field data-hash
-        data    = {pk.to_s => self.send(pk)}
+        data    = {pk => self.send(pk)}
          
         fields.each do |field|
-          if refl = assns[field[:name]] || assns[field[:name].to_sym]
-            if refl[:type] === :belongs_to
-              assn = self.send(field[:name])
-
-              if assn.respond_to?(:to_record)
-                data[field[:name]] = assn.to_record field[:fields]
-              elsif (field[:fields])
-                data[field[:name]] = {}
-                field[:fields].each do |property|
-                  if property.is_a? Hash
-                    data[field[:name]][property[:name]] = assn.send(property[:name]) if assn.respond_to?(property[:name])
-                  else
-                    data[field[:name]][property] = assn.send(property) if assn.respond_to?(property)
-                  end
-                end
+          next if data.has_key? field[:name] # already processed (e.g. explicit mentioning of :id)
+          
+          value = nil
+          if association_reflection = assns[field[:name]] # if field is an association
+            association = self.send(field[:name])
+            case association_reflection[:type]
+            when :belongs_to
+              if association.respond_to? :to_record
+                value = association.to_record *field[:fields]
               else
-                data[field[:name]] = {} # belongs_to assn that doesn't respond to to_record and no fields list
+                value = {}
+                (field[:fields]||[]).each do |sub_field|
+                  value[sub_field[:name]] = association.send(sub_field[:name]) if association.respond_to? sub_field[:name]
+                end
               end
               # Append associations foreign_key to data
-              data[refl[:foreign_key].to_s] = self.send(refl[:foreign_key])
-              if refl[:is_polymorphic]
-                foreign_type = refl[:foreign_key].to_s.gsub(/_id\Z/, '_type').to_sym
-                data[foreign_type.to_s] = self.send(foreign_type)
+              data[association_reflection[:foreign_key]] = self.send(association_reflection[:foreign_key])
+              if association_reflection[:is_polymorphic]
+                foreign_type = self.class.extjs_polymorphic_type(association_reflection[:foreign_key])
+                data[foreign_type] = self.send(foreign_type)
               end
-            elsif refl[:type] === :many
-              data[field[:name]] = self.send(field[:name]).collect {|r| r.to_record}  #CAREFUL!!!!!!!!!!!!1
+            when :many
+              value = association.collect { |r| r.to_record }  # use carefully, can get HUGE
             end
-          else
+          else # not an association -> get the method's value
             value = self.send(field[:name])
-            data[field[:name]] = value.respond_to?(:to_record) ? value.to_record : value
+            value = value.to_record if value.respond_to? :to_record
           end
+          data[field[:name]] = value
         end
         data
       end
@@ -87,46 +83,53 @@ module ExtJS
       # eg: {name:'foo', type: 'string'}
       #
       def extjs_record(*fields)
-        if self.extjs_record_fields.empty?
-          self.extjs_fields(*self.extjs_column_names)
+        fieldset, fields = self.extjs_extract_fieldset! fields
+        
+        if fields.empty?
+          fields = self.extjs_get_fields_for_fieldset(fieldset)
+        else
+          fields = self.process_fields(*fields)
         end
         
         associations  = self.extjs_associations
         columns       = self.extjs_columns_hash
-        fields        = fields.empty? ? self.extjs_record_fields : self.process_fields(*fields)  
         pk            = self.extjs_primary_key
         rs            = []
         
         fields.each do |field|
           field = Marshal.load(Marshal.dump(field)) # making a deep copy
           
-          if col = columns[field[:name]] || columns[field[:name].to_sym] # <-- column on this model                
+          if col = columns[field[:name]] # <-- column on this model                
             rs << self.extjs_field(field, col)      
-          elsif assn = associations[field[:name]] || associations[field[:name].to_sym]
-            assn_fields = field.delete(:fields)
+          elsif assn = associations[field[:name]]
+            assn_fields = field[:fields]
             if assn[:class].respond_to?(:extjs_record)  # <-- exec extjs_record on assn Model.
-              record = assn[:class].extjs_record(assn_fields)
-              rs.concat(record["fields"].collect {|assn_field| 
-                extjs_field(assn_field, :mapping => field[:name], "allowBlank" => true) # <-- allowBlank on associated data?
+              record = assn[:class].extjs_record(field.fetch(:fieldset, fieldset), assn_fields)
+              rs.concat(record[:fields].collect { |assn_field| 
+                self.extjs_field(assn_field, :parent_trail => field[:name], :mapping => field[:name], :allowBlank => true) # <-- allowBlank on associated data?
               })
-            elsif assn_fields  # <-- :parent => [:id, :name]
-              rs.concat(assn_fields.collect {|assn_field| 
-                extjs_field(assn_field, :mapping => field[:name], "allowBlank" => true)
-              })
+            elsif assn_fields  # <-- :parent => [:id, :name, :sub => [:id, :name]]
+              field_collector = Proc.new do |parent_trail, mapping, assn_field|
+                if assn_field.is_a?(Hash) && assn_field.keys.size == 1 && assn_field.keys[0].is_a?(Symbol) && assn_field.values[0].is_a?(Array)
+                  field_collector.call(parent_trail.to_s + self.extjs_parent_trail_template.call(assn_field.keys.first), "#{mapping}.#{assn_field.keys.first}", assn_field.values.first) 
+                else
+                  self.extjs_field(assn_field, :parent_trail => parent_trail, :mapping => mapping, :allowBlank => true)
+                end
+              end
+              rs.concat(assn_fields.collect { |assn_field| field_collector.call(field[:name], field[:name], assn_field) })
             else  
               rs << extjs_field(field)
             end
             
             # attach association's foreign_key if not already included.
-            if (col = columns[assn[:foreign_key]] || columns[assn[:foreign_key].to_s]) && !rs.include?({:name => assn[:foreign_key].to_s})
-              rs << extjs_field({:name => assn[:foreign_key]}, col)
+            if columns.has_key?(assn[:foreign_key]) && !rs.any? { |r| r[:name] == assn[:foreign_key] }
+              rs << extjs_field({:name => assn[:foreign_key]}, columns[assn[:foreign_key]])
             end
             # attach association's type if polymorphic association and not alredy included
             if assn[:is_polymorphic]
-              foreign_type = assn[:foreign_key].to_s.gsub(/_id\Z/, '_type').to_sym
-              if (col = columns[foreign_type] || columns[foreign_type.to_s]) &&
-                  !rs.include?({:name => foreign_type.to_s})
-                rs << extjs_field({:name => foreign_type.to_s}, col)
+              foreign_type = self.extjs_polymorphic_type(assn[:foreign_key])
+              if columns.has_key?(foreign_type) && !rs.any? { |r| r[:name] == foreign_type }
+                rs << extjs_field({:name => foreign_type}, columns[foreign_type])
               end
             end
           else # property is a method?
@@ -135,8 +138,8 @@ module ExtJS
         end
         
         return {
-          "fields" => rs,
-          "idProperty" => pk
+          :fields => rs,
+          :idProperty => pk
         }
       end
       
@@ -144,53 +147,93 @@ module ExtJS
       # meant to be used within a Model to define the extjs record fields.
       # eg:
       # class User
-      #   extjs_fields :first, :last, :email => {"sortDir" => "ASC"}, :company => [:id, :name]
+      #   extjs_fieldset :grid, [:first, :last, :email => {"sortDir" => "ASC"}, :company => [:id, :name]]
+      # end
+      # or
+      # class User
+      #   extjs_fieldset :last, :email => {"sortDir" => "ASC"}, :company => [:id, :name] # => implies fieldset name :default
       # end
       #
+      def extjs_fieldset(*params)
+        fieldset, params = self.extjs_extract_fieldset! params
+        # creates a method storing the fieldset-to-field association
+        # using a method and not an class-level variable because the latter
+        # is bogus when we deal with inheritance
+        var_name = :"@extjs_fieldsets__#{fieldset}"
+        self.instance_variable_set( var_name, self.process_fields(*params) )
+      end
+      
+      def extjs_get_fields_for_fieldset(fieldset)
+        var_name = :"@extjs_fieldsets__#{fieldset}"
+        super_value = nil
+        unless self.instance_variable_get( var_name )
+          if self.superclass.respond_to? :extjs_get_fields_for_fieldset
+            super_value = self.superclass.extjs_get_fields_for_fieldset(fieldset)
+          end
+          self.extjs_fieldset(fieldset, self.extjs_column_names) unless super_value
+        end
+        super_value || self.instance_variable_get( var_name )
+      end
+      
+      ##
+      # shortcut to define the default fieldset. For backwards-compatibility.
+      #
       def extjs_fields(*params)
-        self.extjs_record_fields = self.process_fields(*params)
+        self.extjs_fieldset(:default, params)
       end
       
       ##
       # Prepare a field configuration list into a normalized array of Hashes, {:name => "field_name"} 
       # @param {Mixed} params
-      # @return Array
+      # @return {Array} of Hashes
       #
-      def process_fields(*params) 
-        options = params.extract_options!
-        
+      def process_fields(*params)
         fields = []
-        if !options.keys.empty?
-          if excludes = options.delete(:exclude) && exclude.kind_of?(Array)
-            fields = self.process_fields(self.extjs_column_names - excludes.map(&:to_s))
-          elsif only = options.delete(:only) && only.kind_of?(Array)
-            fields = self.process_fields(only)
-          else
-            options.keys.each do |k|  # <-- :email => {"sortDir" => "ASC"}
-              if options[k].is_a? Hash
-                options[k][:name] = k.to_s
-                fields << options[k]
-              elsif options[k].is_a? Array # <-- :parent => [:id, :name]
-                fields << {
-                  :name => k.to_s,
-                  :fields => process_fields(*options[k])
-                }
-              end
-            end
+        if params.size == 1 && params.last.is_a?(Hash) # peek into argument to see if its an option hash
+          options = params.last
+          if options.has_key?(:exclude) && options[:exclude].is_a?(Array)
+            return self.process_fields(*(self.extjs_column_names - options[:exclude].map(&:to_sym)))
+          elsif options.has_key?(:only) && options[:only].is_a?(Array)
+            return self.process_fields(*options[:only])
           end
-        elsif params.empty?
-          return self.extjs_record_fields
         end
         
-        params.flatten(1).compact.each do |f|
+        params = self.extjs_column_names if params.empty?
+        
+        params.each do |f|
           if f.kind_of?(Hash)
-            fields << f
-          else
-            fields << {:name => f.to_s}
+            if f.keys.size == 1 && f.keys[0].is_a?(Symbol) && f.values[0].is_a?(Array) # {:association => [:field1, :field2]}
+              fields << {
+                :name => f.keys[0],
+                :fields => process_fields(*f.values[0])
+              }
+            elsif f.keys.size == 1 && f.keys[0].is_a?(Symbol) && f.values[0].is_a?(Hash) # {:field => {:sortDir => 'ASC'}}
+              fields << f.values[0].update(:name => f.keys[0])
+            elsif f.has_key?(:name) # already a valid Hash, just copy it over
+              fields << f
+            else
+              raise ArgumentError, "encountered a Hash that I don't know anyting to do with `#{f.inspect}:#{f.class}`"
+            end
+          else # should be a String or Symbol
+            fields << {:name => f.to_sym}
           end
         end
         
         fields
+      end
+      
+      ##
+      # returns the fieldset from the arguments. 
+      # @return [{Symbol}, Array]
+      def extjs_extract_fieldset! arguments
+        fieldset = :default
+        if arguments.size > 1 && arguments[0].is_a?(Symbol) && arguments[1].is_a?(Array)
+          fieldset = arguments.shift
+          arguments = arguments[0]
+        elsif arguments.size == 1 && arguments[0].is_a?(Symbol)
+          fieldset = arguments.shift
+        end
+        [fieldset, arguments]
       end
       
       ##
@@ -200,41 +243,48 @@ module ExtJS
       #
       def extjs_field(field, config=nil)  
         if config.kind_of? Hash
-          if mapping = config.delete(:mapping)
+          if config.has_key?(:mapping) && config.has_key?(:parent_trail)
             field.update( # <-- We use a template for rendering mapped field-names.
-              :name => mapping + self.extjs_mapping_template.gsub(/\{property\}/, field[:name]),
-              "mapping" => "#{mapping.to_s}.#{field[:name]}"
+              :name => config[:parent_trail].to_s + self.extjs_parent_trail_template.call(field[:name]),
+              :mapping => "#{config[:mapping]}.#{field[:name]}"
             )
           end
-          field.update(config) unless config.keys.empty?
+          field.update(config.except(:mapping, :parent_trail))
         elsif !config.nil?  # <-- Hopfully an ORM Column object.
           field.update(
-            "allowBlank" => self.extjs_allow_blank(config),
-            "type" => self.extjs_type(config)
+            :allowBlank => self.extjs_allow_blank(config),
+            :type => self.extjs_type(config),
+            :defaultValue => self.extjs_default(config)
           )
-          field["dateFormat"] = "c" if field["type"] === :date && field["dateFormat"].nil? # <-- ugly hack for date  
+          field[:dateFormat] = "c" if field[:type] === "date" && field[:dateFormat].nil? # <-- ugly hack for date  
         end  
-        field.update("type" => "auto") if field["type"].nil?
+        field.update(:type => "auto") if field[:type].nil?
+        # convert Symbol values to String values
+        field.keys.each do |k|
+          raise ArgumentError, "extjs_field expects a Hash as first parameter with all it's keys Symbols. Found key #{k.inspect}:#{k.class.to_s}" unless k.is_a?(Symbol)
+          field[k] = field[k].to_s if field[k].is_a?(Symbol)
+        end
         field
       end
+      
 
-      ##
-      # Returns an array of symbolized association names that will be referenced by a call to to_record
-      # i.e. [:parent1, :parent2]
-      #
-      def extjs_used_associations
-        if @extjs_used_associations.nil?
-          assoc = []
-          self.extjs_record_fields.each do |f|
-            #This needs to be the first condition because the others will break if f is an Array
-            if extjs_associations[f[:name]]
-              assoc << f[:name]
-            end
-          end
-          @extjs_used_associations = assoc.uniq
-        end
-        @extjs_used_associations
-      end
+      # ##
+      # # Returns an array of symbolized association names that will be referenced by a call to to_record
+      # # i.e. [:parent1, :parent2]
+      # #
+      # def extjs_used_associations
+      #   if @extjs_used_associations.nil?
+      #     assoc = []
+      #     self.extjs_record_fields.each do |f|
+      #       #This needs to be the first condition because the others will break if f is an Array
+      #       if extjs_associations[f[:name]]
+      #         assoc << f[:name]
+      #       end
+      #     end
+      #     @extjs_used_associations = assoc.uniq
+      #   end
+      #   @extjs_used_associations
+      # end
     end
   end
 end

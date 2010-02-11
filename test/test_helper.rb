@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'test/unit'
 require 'shoulda'
+require 'mocha'
 
 require 'active_record'
 require 'active_support'
@@ -26,6 +27,7 @@ FIXTURES_DIR = File.join(File.dirname(__FILE__), "fixtures")
 config = YAML::load(IO.read(File.dirname(__FILE__) + '/database.yml'))
 ActiveRecord::Base.logger = Logger.new(File.dirname(__FILE__) + "/debug.log")
 ActiveRecord::Base.establish_connection(config['test'])
+
 
 ##
 # build User / Person models
@@ -61,7 +63,9 @@ end
 
 class Location < ActiveRecord::Base
   has_one :address, :as => :addressable
-  #include ExtJS::Model
+  include ExtJS::Model
+end
+class House < Location
 end
 class Address < ActiveRecord::Base
   belongs_to :addressable, :polymorphic => true
@@ -114,6 +118,8 @@ end
 ActiveRecord::Base.connection.create_table :locations, :force => true do |table|
   table.column :id, :serial
   table.column :name, :string
+  table.column :street, :string
+  table.column :type, :string
 end
 
 ##
@@ -150,4 +156,13 @@ end
 p = Person.create(:first => "Chris", :last => "Scott", :email => "chris@scott.com")
 u = User.create(:password => "1234", :person => p)
 
-
+def clean klass
+  klass.instance_variables.each do |var_name|
+    if /\A@extjs_fieldsets__/ =~ var_name.to_s
+      klass.instance_variable_set( var_name.to_sym, nil )
+    end
+  end
+end
+def clean_all
+  [User, Person, DataType, UserGroup, Group, Location, House, Address].map { |klass| clean klass }
+end
