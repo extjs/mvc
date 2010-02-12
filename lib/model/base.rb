@@ -48,7 +48,11 @@ module ExtJS
             case association_reflection[:type]
             when :belongs_to
               if association.respond_to? :to_record
-                value = association.to_record *field[:fields]
+                assn_fields = field[:fields]
+                if assn_fields.nil?
+                  assn_fields = association.class.extjs_get_fields_for_fieldset(field.fetch(:fieldset, fieldset))
+                end
+                value = association.to_record *assn_fields
               else
                 value = {}
                 (field[:fields]||[]).each do |sub_field|
@@ -104,6 +108,9 @@ module ExtJS
           elsif assn = associations[field[:name]]
             assn_fields = field[:fields]
             if assn[:class].respond_to?(:extjs_record)  # <-- exec extjs_record on assn Model.
+              if assn_fields.nil?
+                assn_fields = assn[:class].extjs_get_fields_for_fieldset(field.fetch(:fieldset, fieldset))
+              end
               record = assn[:class].extjs_record(field.fetch(:fieldset, fieldset), assn_fields)
               rs.concat(record[:fields].collect { |assn_field| 
                 self.extjs_field(assn_field, :parent_trail => field[:name], :mapping => field[:name], :allowBlank => true) # <-- allowBlank on associated data?
@@ -200,6 +207,8 @@ module ExtJS
         
         params = self.extjs_column_names if params.empty?
         
+        associations = extjs_associations
+        
         params.each do |f|
           if f.kind_of?(Hash)
             if f.keys.size == 1 && f.keys[0].is_a?(Symbol) && f.values[0].is_a?(Array) # {:association => [:field1, :field2]}
@@ -215,6 +224,7 @@ module ExtJS
               raise ArgumentError, "encountered a Hash that I don't know anyting to do with `#{f.inspect}:#{f.class}`"
             end
           else # should be a String or Symbol
+            puts params.inspect if f.nil?
             fields << {:name => f.to_sym}
           end
         end

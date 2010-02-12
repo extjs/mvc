@@ -141,6 +141,31 @@ class ModelTest < Test::Unit::TestCase
     end
   end
   
+  context "User with standard Person association" do
+    setup do
+      clean_all
+      User.extjs_fields(:id, :password, :person)
+    end
+    should "produce a valid store config" do
+      fields = User.extjs_record[:fields]
+      assert_array_has_item(fields, 'has id') {|f| f[:name] === "id" }
+      assert_array_has_item(fields, 'has person_id') {|f| f[:name] === "person_id" }
+      assert_array_has_item(fields, 'has password') {|f| f[:name] === "password" }
+      assert_array_has_item(fields, 'has person_last') {|f| f[:name] === "person_last" and f[:mapping] == "person.last" }
+      assert_array_has_item(fields, 'has person_first') {|f| f[:name] === "person_first" and f[:mapping] == "person.first" }
+    end
+    should "produce a valid to_record record" do
+      person = Person.create!(:first => 'first', :last => 'last', :email => 'email')
+      user = User.create!(:person_id => person.id, :password => 'password')
+      record = user.to_record
+      assert_equal(user.id, record[:id])
+      assert_equal(person.id, record[:person_id])
+      assert_equal('password', record[:password])
+      assert_equal('last', record[:person][:last])
+      assert_equal('first', record[:person][:first])
+    end
+  end
+  
   context "Fields should render with correct, ExtJS-compatible data-types" do
     setup do
       clean_all
