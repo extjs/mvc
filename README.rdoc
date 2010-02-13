@@ -45,14 +45,41 @@ fields with will be used to render the <tt>Ext.data.Record.create</tt> field-def
 
 After including the model mixin <tt>ExtJS::Model</tt>, try typing the following in <tt>irb</tt> console:
     >> User.extjs_record
-    => { "idProperty"=>"id", "fields"=>[
-         {:type=>:int, :allowBlank=>true, :name=>"id"},
-         {:type=>:string, :allowBlank=>false, :name=>"first"},
-         {:type=>:string, :allowBlank=>false, :name=>"last"},
-         {:type=>:string, :allowBlank=>false, :name=>"email"}
+    => { :idProperty=>"id", :fields=>[
+         {:type=>'int', :allowBlank=>true, :name=>"id"},
+         {:type=>'string', :allowBlank=>false, :name=>"first", :defaultValue => nil},
+         {:type=>'string', :allowBlank=>false, :name=>"last", :defaultValue => nil},
+         {:type=>'string', :allowBlank=>false, :name=>"email", :defaultValue => nil}
        ]}
 
 An auto-generated <tt>Ext.data.JsonReader</tt> configuration!
+
+
+You can also define different sets of fields for different representation of your model.
+
+E.g. with the following definition:
+
+    class User < ActiveRecord::Base
+      include ExtJS::Model
+
+      extjs_fieldset :grid, [:name, :description, :company => [:name, :description]]
+      extjs_fieldset :combo, [:full_name]
+  
+      def full_name
+        "#{first_name} #{name}"
+      end
+    end
+
+You can get store configs for both representations with
+    User.extjs_record(:grid)
+or
+    User.extjs_record(:combo)
+    
+And the corresponding data for the representations with
+    User.first.to_record(:grid)
+or
+    User.first.to_record(:combo)
+
 
 === An ActionController mixin:  ExtJS::Controller
 The <tt>extjs-mvc</tt> Gem includes a framework agnostic Controller mixin which works with both Rails and Merb.  Include this mixin into any controller which will need to generate an <tt>Ext.data.Store</tt>.

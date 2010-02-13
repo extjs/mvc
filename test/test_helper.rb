@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'test/unit'
 require 'shoulda'
+require 'mocha'
 
 require 'active_record'
 require 'active_support'
@@ -27,6 +28,7 @@ config = YAML::load(IO.read(File.dirname(__FILE__) + '/database.yml'))
 #ActiveRecord::Base.logger = Logger.new(File.dirname(__FILE__) + "/debug.log")
 ActiveRecord::Base.establish_connection(config['test'])
 
+
 ##
 # build User / Person models
 # Move AR-specific stuff to AR test adapter
@@ -41,6 +43,7 @@ class User < ActiveRecord::Base
 end
 
 class Person < ActiveRecord::Base
+  has_one :user
   include ExtJS::Model
 end
 
@@ -55,6 +58,17 @@ end
 
 class Group < ActiveRecord::Base
   has_many :users
+  include ExtJS::Model
+end
+
+class Location < ActiveRecord::Base
+  has_one :address, :as => :addressable
+  include ExtJS::Model
+end
+class House < Location
+end
+class Address < ActiveRecord::Base
+  belongs_to :addressable, :polymorphic => true
   include ExtJS::Model
 end
 
@@ -99,6 +113,26 @@ ActiveRecord::Base.connection.create_table :groups, :force => true do |table|
 end
 
 ##
+# locations
+#
+ActiveRecord::Base.connection.create_table :locations, :force => true do |table|
+  table.column :id, :serial
+  table.column :name, :string
+  table.column :street, :string
+  table.column :type, :string
+end
+
+##
+# addresses
+#
+ActiveRecord::Base.connection.create_table :addresses, :force => true do |table|
+  table.column :id, :serial
+  table.column :addressable_type, :string
+  table.column :addressable_id, :integer
+  table.column :street, :string
+end
+
+##
 # Mock a Model for testing data-types
 #
 ActiveRecord::Base.connection.create_table :data_types, :force => true do |table|
@@ -122,4 +156,13 @@ end
 p = Person.create(:first => "Chris", :last => "Scott", :email => "chris@scott.com")
 u = User.create(:password => "1234", :person => p)
 
-
+def clean klass
+  klass.instance_variables.each do |var_name|
+    if /\A@extjs_fieldsets__/ =~ var_name.to_s
+      klass.instance_variable_set( var_name.to_sym, nil )
+    end
+  end
+end
+def clean_all
+  [User, Person, DataType, UserGroup, Group, Location, House, Address].map { |klass| clean klass }
+end

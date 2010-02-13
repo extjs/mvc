@@ -10,11 +10,11 @@ module ExtJS
       end
       
       def extjs_column_names
-        self.column_names
+        self.column_names.map(&:to_sym)
       end
       
       def extjs_columns_hash
-        self.columns_hash
+        self.columns_hash.symbolize_keys
       end
       
       ##
@@ -27,21 +27,38 @@ module ExtJS
       end
       
       ##
+      # returns the default value
+      # @param {ActiveRecord::ConnectionAdapters::Column}
+      # @return {Mixed}
+      #
+      def extjs_default(col)
+        col.default
+      end
+      
+      ##
+      # returns the corresponding column name of the type column for a polymorphic association
+      # @param {String/Symbol} the id column name for this association
+      # @return {Symbol}
+      def extjs_polymorphic_type(id_column_name)
+        id_column_name.to_s.gsub(/_id\Z/, '_type').to_sym
+      end
+      
+      ##
       # determine datatype of supplied Column object
       # @param {ActiveRecord::ConnectionAdapters::Column}
-      # @return {Symbol}
+      # @return {String}
       #
       def extjs_type(col)
-        type = col.type
+        type = col.type.to_s
         case type
-          when :datetime, :date, :time, :timestamp
-            type = :date
-          when :text
-            type = :string
-          when :integer
-            type = :int
-          when :decimal
-            type = :float
+          when "datetime", "date", "time", "timestamp"
+            type = "date"
+          when "text"
+            type = "string"
+          when "integer"
+            type = "int"
+          when "decimal"
+            type = "float"
         end
         type
       end
@@ -51,20 +68,21 @@ module ExtJS
       # @return {Array}
       #
       def extjs_associations
-        if @extjs_associations.nil?
-          @extjs_associations = {}
+        #if @extjs_associations.nil?
+          extjs_associations = {}
           self.reflections.keys.each do |key|
             assn = self.reflections[key]
             type = (assn.macro === :has_many || assn.macro === :has_and_belongs_to_many) ? :many : assn.macro
-            @extjs_associations[key.to_sym] = {
-              :name => key, 
+            extjs_associations[key.to_sym] = {
+              :name => key.to_sym, 
               :type => type, 
-              :class => assn.class_name.constantize,
-              :foreign_key => assn.association_foreign_key
+              :class => assn.options[:polymorphic] ? nil : assn.class_name.constantize,
+              :foreign_key => assn.association_foreign_key.to_sym,
+              :is_polymorphic => !!assn.options[:polymorphic]
             }
           end
-        end        
-        @extjs_associations
+        #end        
+        extjs_associations
       end
     end
   end
