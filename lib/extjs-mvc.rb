@@ -36,4 +36,3 @@ module ExtJS
    end
 end
 
-
