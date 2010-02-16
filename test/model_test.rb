@@ -166,6 +166,48 @@ class ModelTest < Test::Unit::TestCase
     end
   end
   
+  context "Person with User association (has_one relationship)" do
+    setup do
+      clean_all
+      User.extjs_fields(:id, :password)
+      Person.extjs_fields(:id, :user)
+    end
+    should "produce a valid store config" do
+      fields = Person.extjs_record[:fields]
+      assert_array_has_item(fields, 'has id') {|f| f[:name] === "id" }
+      assert_array_has_item(fields, 'has user_id') {|f| f[:name] === "user_id" and f[:mapping] == 'user.id' }
+      assert_array_has_item(fields, 'has user_password') {|f| f[:name] === "user_password"and f[:mapping] == 'user.password' }
+    end
+    should "produce a valid to_record record" do
+      person = Person.create!(:first => 'first', :last => 'last', :email => 'email')
+      user = User.create!(:person_id => person.id, :password => 'password')
+      record = person.reload.to_record
+      assert_equal(person.id, record[:id])
+      assert_equal(user.id, record[:user][:id])
+      assert_equal('password', record[:user][:password])
+    end
+  end
+  
+  context "Person with User association (has_one/belongs_to relationship) cyclic reference" do
+    setup do
+      clean_all
+      User.extjs_fields(:id, :person)
+      Person.extjs_fields(:id, :user)
+    end
+    should "produce a valid store config for Person" do
+      fields = Person.extjs_record[:fields]
+      assert_array_has_item(fields, 'has id') {|f| f[:name] === "id" }
+      assert_array_has_item(fields, 'has user_id') {|f| f[:name] === "user_id" and f[:mapping] == 'user.id' }
+    end
+    should "produce a valid to_record record for Person" do
+      person = Person.create!(:first => 'first', :last => 'last', :email => 'email')
+      user = User.create!(:person_id => person.id, :password => 'password')
+      record = person.reload.to_record
+      assert_equal(person.id, record[:id])
+      assert_equal(user.id, record[:user][:id])
+    end
+  end
+  
   context "Fields should render with correct, ExtJS-compatible data-types" do
     setup do
       clean_all
@@ -261,11 +303,11 @@ class ModelTest < Test::Unit::TestCase
     end
   end
   
-  context "ExtJS::Model::ClassMethods" do
-
-    context "#extjs_extract_fieldset! default" do
+  context "ExtJS::Model::Util" do
+    context "#extract_fieldset_and_options default" do
       setup do
-        @fieldset, @fields = BogusModel.extjs_extract_fieldset! [:one, :two, :three]
+        @fieldset, @options = ExtJS::Model::Util.extract_fieldset_and_options [:fields => [:one, :two, :three]]
+        @fields = @options[:fields]
       end
       should "return :default when no fieldset provided" do
         assert_equal(:'default', @fieldset)
@@ -275,9 +317,10 @@ class ModelTest < Test::Unit::TestCase
       end
     end
 
-    context "#extjs_extract_fieldset! with explicit fieldset definition" do
+    context "#extract_fieldset_and_options with explicit fieldset definition and array with fields" do
       setup do
-        @fieldset, @fields = BogusModel.extjs_extract_fieldset! [:explicit, [:one, :two, :three]]
+        @fieldset, @options = ExtJS::Model::Util.extract_fieldset_and_options [:explicit, [:one, :two, :three]]
+        @fields = @options[:fields]
       end
       should "return :default when no fieldset provided" do
         assert_equal(:'explicit', @fieldset)
@@ -287,18 +330,55 @@ class ModelTest < Test::Unit::TestCase
       end
     end
     
-    context "#extjs_extract_fieldset! edge cases" do
+    context "#extract_fieldset_and_options with explicit fieldset definition and hash with fields" do
+      setup do
+        @fieldset, @options = ExtJS::Model::Util.extract_fieldset_and_options [:explicit, {:fields => [:one, :two, :three]}]
+        @fields = @options[:fields]
+      end
+      should "return :default when no fieldset provided" do
+        assert_equal(:'explicit', @fieldset)
+      end
+      should "not alter the fields array" do
+        assert_equal([:one, :two, :three], @fields)
+      end
+    end
+    
+    context "#extract_fieldset_and_options with only a hash" do
+      setup do
+        @fieldset, @options = ExtJS::Model::Util.extract_fieldset_and_options [{:fieldset => :explicit, :fields => [:one, :two, :three]}]
+        @fields = @options[:fields]
+      end
+      should "return :default when no fieldset provided" do
+        assert_equal(:'explicit', @fieldset)
+      end
+      should "not alter the fields array" do
+        assert_equal([:one, :two, :three], @fields)
+      end
+    end
+    
+    context "#extract_fieldset_and_options edge cases" do
       should "called without arguments" do
-        @fieldset, @fields = BogusModel.extjs_extract_fieldset! []
+        @fieldset, @options = ExtJS::Model::Util.extract_fieldset_and_options []
+        @fields = @options[:fields]
         assert_equal(:'default', @fieldset)
         assert_equal([], @fields)
       end
       should "called with only the fieldset and no field arguments" do
-        @fieldset, @fields = BogusModel.extjs_extract_fieldset! [:explicit]
+        @fieldset, @options = ExtJS::Model::Util.extract_fieldset_and_options [:explicit]
+        @fields = @options[:fields]
         assert_equal(:'explicit', @fieldset)
         assert_equal([], @fields)
       end
+      should "raise error when called with more than 2 arguments" do
+        assert_raise(ArgumentError) { ExtJS::Model::Util.extract_fieldset_and_options [:explicit, :some, {}] }
+      end
+      should "raise error when called with 2 arguments and the first one is no symbol" do
+        assert_raise(ArgumentError) { ExtJS::Model::Util.extract_fieldset_and_options [{ :fields => [] }, :explicit] }
+      end
     end
+  end
+  
+  context "ExtJS::Model::ClassMethods" do
     
     context "#process_fields" do
       should "handle a simple Array of Symbols" do

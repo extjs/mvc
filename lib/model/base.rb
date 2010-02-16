@@ -21,16 +21,33 @@ module ExtJS
       
       ##
       # Converts a model instance to a record compatible with ExtJS
-      # @params {Mixed} params A list of fields to use instead of this Class's extjs_record_fields
       #
+      # The first parameter should be the fieldset for which the record will be returned.
+      # If no parameter is provided, then the default fieldset will be choosen
+      # Alternativly the first parameter can be a Hash with a :fields member to directly specify
+      # the fields to use for the record.
+      #
+      # All these are valid calls:
+      #
+      #  user.to_record             # returns record for :default fieldset 
+      #                             # (fieldset is autmatically defined, if not set)
+      #
+      #  user.to_record :fieldset   # returns record for :fieldset fieldset
+      #                             # (fieldset is autmatically defined, if not set)
+      #
+      #  user.to_record :fields => [:id, :password]
+      #                             # returns record for the fields 'id' and 'password'
+      # 
+      # For even more valid options for this method (which all should not be neccessary to use)
+      # have a look at ExtJS::Model::Util.extract_fieldset_and_options
       def to_record(*params)
-        fieldset, params = self.class.extjs_extract_fieldset! params
+        fieldset, options = Util.extract_fieldset_and_options params
         
         fields = []
-        if params.empty?
+        if options[:fields].empty?
           fields = self.class.extjs_get_fields_for_fieldset(fieldset)
         else
-          fields = self.class.process_fields(*params)
+          fields = self.class.process_fields(*options[:fields])
         end
         
         assns   = self.class.extjs_associations
@@ -45,25 +62,34 @@ module ExtJS
           value = nil
           if association_reflection = assns[field[:name]] # if field is an association
             association = self.send(field[:name])
+            
+            # skip this association if we already visited it
+            # otherwise we could end up in a cyclic reference
+            next if options[:visited_classes].include? association.class
+            
             case association_reflection[:type]
-            when :belongs_to
+            when :belongs_to, :has_one
               if association.respond_to? :to_record
                 assn_fields = field[:fields]
                 if assn_fields.nil?
                   assn_fields = association.class.extjs_get_fields_for_fieldset(field.fetch(:fieldset, fieldset))
                 end
-                value = association.to_record *assn_fields
+                
+                value = association.to_record :fields => assn_fields,
+                  :visited_classes => options[:visited_classes] + [self.class]
               else
                 value = {}
                 (field[:fields]||[]).each do |sub_field|
                   value[sub_field[:name]] = association.send(sub_field[:name]) if association.respond_to? sub_field[:name]
                 end
               end
-              # Append associations foreign_key to data
-              data[association_reflection[:foreign_key]] = self.send(association_reflection[:foreign_key])
-              if association_reflection[:is_polymorphic]
-                foreign_type = self.class.extjs_polymorphic_type(association_reflection[:foreign_key])
-                data[foreign_type] = self.send(foreign_type)
+              if association_reflection[:type] == :belongs_to
+                # Append associations foreign_key to data
+                data[association_reflection[:foreign_key]] = self.send(association_reflection[:foreign_key])
+                if association_reflection[:is_polymorphic]
+                  foreign_type = self.class.extjs_polymorphic_type(association_reflection[:foreign_key])
+                  data[foreign_type] = self.send(foreign_type)
+                end
               end
             when :many
               value = association.collect { |r| r.to_record }  # use carefully, can get HUGE
@@ -86,13 +112,31 @@ module ExtJS
       # render AR columns to Ext.data.Record.create format
       # eg: {name:'foo', type: 'string'}
       #
-      def extjs_record(*fields)
-        fieldset, fields = self.extjs_extract_fieldset! fields
+      # The first parameter should be the fieldset for which the record definition will be returned.
+      # If no parameter is provided, then the default fieldset will be choosen
+      # Alternativly the first parameter can be a Hash with a :fields member to directly specify
+      # the fields to use for the record config.
+      #
+      # All these are valid calls:
+      #
+      #  User.extjs_record             # returns record config for :default fieldset 
+      #                                # (fieldset is autmatically defined, if not set)
+      #
+      #  User.extjs_record :fieldset   # returns record config for :fieldset fieldset
+      #                                # (fieldset is autmatically defined, if not set)
+      #
+      #  User.extjs_record :fields => [:id, :password]
+      #                                # returns record config for the fields 'id' and 'password'
+      # 
+      # For even more valid options for this method (which all should not be neccessary to use)
+      # have a look at ExtJS::Model::Util.extract_fieldset_and_options
+      def extjs_record(*params)
+        fieldset, options = Util.extract_fieldset_and_options params
         
-        if fields.empty?
+        if options[:fields].empty?
           fields = self.extjs_get_fields_for_fieldset(fieldset)
         else
-          fields = self.process_fields(*fields)
+          fields = self.process_fields(*options[:fields])
         end
         
         associations  = self.extjs_associations
@@ -106,12 +150,18 @@ module ExtJS
           if col = columns[field[:name]] # <-- column on this model                
             rs << self.extjs_field(field, col)      
           elsif assn = associations[field[:name]]
+            
+            # skip this association if we already visited it
+            # otherwise we could end up in a cyclic reference
+            next if options[:visited_classes].include? assn[:class]
+            
             assn_fields = field[:fields]
             if assn[:class].respond_to?(:extjs_record)  # <-- exec extjs_record on assn Model.
               if assn_fields.nil?
                 assn_fields = assn[:class].extjs_get_fields_for_fieldset(field.fetch(:fieldset, fieldset))
               end
-              record = assn[:class].extjs_record(field.fetch(:fieldset, fieldset), assn_fields)
+              
+              record = assn[:class].extjs_record(field.fetch(:fieldset, fieldset), { :visited_classes => options[:visited_classes] + [self], :fields => assn_fields})
               rs.concat(record[:fields].collect { |assn_field| 
                 self.extjs_field(assn_field, :parent_trail => field[:name], :mapping => field[:name], :allowBlank => true) # <-- allowBlank on associated data?
               })
@@ -162,12 +212,9 @@ module ExtJS
       # end
       #
       def extjs_fieldset(*params)
-        fieldset, params = self.extjs_extract_fieldset! params
-        # creates a method storing the fieldset-to-field association
-        # using a method and not an class-level variable because the latter
-        # is bogus when we deal with inheritance
+        fieldset, options = Util.extract_fieldset_and_options params
         var_name = :"@extjs_fieldsets__#{fieldset}"
-        self.instance_variable_set( var_name, self.process_fields(*params) )
+        self.instance_variable_set( var_name, self.process_fields(*options[:fields]) )
       end
       
       def extjs_get_fields_for_fieldset(fieldset)
@@ -186,7 +233,9 @@ module ExtJS
       # shortcut to define the default fieldset. For backwards-compatibility.
       #
       def extjs_fields(*params)
-        self.extjs_fieldset(:default, params)
+        self.extjs_fieldset(:default, {
+          :fields => params
+        })
       end
       
       ##
@@ -221,29 +270,15 @@ module ExtJS
             elsif f.has_key?(:name) # already a valid Hash, just copy it over
               fields << f
             else
-              raise ArgumentError, "encountered a Hash that I don't know anyting to do with `#{f.inspect}:#{f.class}`"
+              raise ArgumentError, "encountered a Hash that I don't know anything to do with `#{f.inspect}:#{f.class}`"
             end
           else # should be a String or Symbol
-            puts params.inspect if f.nil?
+            raise ArgumentError, "encountered a fields Array that I don't understand: #{params.inspect} -- `#{f.inspect}:#{f.class}` is not a Symbol or String" unless f.is_a?(Symbol) || f.is_a?(String)
             fields << {:name => f.to_sym}
           end
         end
         
         fields
-      end
-      
-      ##
-      # returns the fieldset from the arguments. 
-      # @return [{Symbol}, Array]
-      def extjs_extract_fieldset! arguments
-        fieldset = :default
-        if arguments.size > 1 && arguments[0].is_a?(Symbol) && arguments[1].is_a?(Array)
-          fieldset = arguments.shift
-          arguments = arguments[0]
-        elsif arguments.size == 1 && arguments[0].is_a?(Symbol)
-          fieldset = arguments.shift
-        end
-        [fieldset, arguments]
       end
       
       ##
@@ -295,6 +330,39 @@ module ExtJS
       #   end
       #   @extjs_used_associations
       # end
+    end
+    
+    module Util
+      
+      ##
+      # returns the fieldset from the arguments and normalizes the options. 
+      # @return [{Symbol}, {Hash}]
+      def self.extract_fieldset_and_options arguments
+        orig_args = arguments
+        fieldset = :default
+        options = { # default options
+          :visited_classes => [],
+          :fields => []
+        }
+        if arguments.size > 2 || (arguments.size == 2 && !arguments[0].is_a?(Symbol))
+          raise ArgumentError, "Don't know how to handle #{arguments.inspect}"
+        elsif arguments.size == 2 && arguments[0].is_a?(Symbol)
+          fieldset = arguments.shift
+          if arguments[0].is_a?(Array)
+            options.update({
+              :fields => arguments[0]
+            })
+          elsif arguments[0].is_a?(Hash)
+            options.update(arguments[0])
+          end
+        elsif arguments.size == 1 && arguments[0].is_a?(Symbol)
+          fieldset = arguments.shift
+        elsif arguments.size == 1 && arguments[0].is_a?(Hash)
+          fieldset = arguments[0].delete(:fieldset) || :default
+          options.update(arguments[0])
+        end
+        [fieldset, options]
+      end
     end
   end
 end
