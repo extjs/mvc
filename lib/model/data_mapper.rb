@@ -52,7 +52,8 @@ module ExtJS
               :name => key, 
               :type => type = (assn.options[:max].nil? && assn.options[:min].nil?) ? :belongs_to : (assn.options[:max] > 1) ? :many : nil ,
               :class => assn.parent_model,
-              :foreign_key => assn.child_key.first.name
+              :foreign_key => assn.child_key.first.name,
+              :is_polymorphic => false # <-- No impl. for DM is_polymorphic.  Anyone care to implement this?
             }
           end
         end

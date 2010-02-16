@@ -28,7 +28,8 @@ module ExtJS
               :name => key,
               :type => self.associations[key].type,
               :class => self.associations[key].class_name.constantize,
-              :foreign_key => self.associations[key].foreign_key
+              :foreign_key => self.associations[key].foreign_key,
+              :is_polymorphic => false # <-- no impl. for MM is_polymorhpic yet.  Anyone care to implement this?
             }
           end
         end
