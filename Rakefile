@@ -5,12 +5,14 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
     gem.name = "extjs-mvc"
-    gem.summary = %Q{Ruby tools for ExtJS development}
+    gem.summary = %Q{Ruby ORM tools to assist with rendering Ext.data.Store}
     gem.description = %Q{MVC tools to assist with ExtJS development in Rails and Merb}
     gem.email = "christocracy@gmail.com"
     gem.homepage = "http://github.com/extjs/mvc"
     gem.authors = ["Chris Scott"]
     gem.add_development_dependency "shoulda"
+    gem.add_development_dependency "mocha"
+    
     gem.test_files = []
     gem.files =  FileList["[A-Z]*", "{bin,generators,lib,test}/**/*", 'lib/jeweler/templates/.gitignore']
 

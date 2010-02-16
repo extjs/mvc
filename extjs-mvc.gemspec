@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{extjs-mvc}
-  s.version = "0.2.8"
+  s.version = "0.3.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Chris Scott"]
-  s.date = %q{2009-11-25}
+  s.date = %q{2010-02-15}
   s.description = %q{MVC tools to assist with ExtJS development in Rails and Merb}
   s.email = %q{christocracy@gmail.com}
   s.extra_rdoc_files = [
@@ -42,7 +42,7 @@ Gem::Specification.new do |s|
      "test/database.yml",
      "test/debug.log",
      "test/model_test.rb",
-     "test/mongo_mapper.rb",
+     "test/mongo_mapper_test.rb",
      "test/store_test.rb",
      "test/test_helper.rb"
   ]
@@ -57,11 +57,14 @@ Gem::Specification.new do |s|
     s.specification_version = 3
 
     if Gem::Version.new(Gem::RubyGemsVersion) >= Gem::Version.new('1.2.0') then
-      s.add_development_dependency(%q<thoughtbot-shoulda>, [">= 0"])
+      s.add_development_dependency(%q<shoulda>, [">= 0"])
+      s.add_development_dependency(%q<mocha>, [">= 0"])
     else
-      s.add_dependency(%q<thoughtbot-shoulda>, [">= 0"])
+      s.add_dependency(%q<shoulda>, [">= 0"])
+      s.add_dependency(%q<mocha>, [">= 0"])
     end
   else
-    s.add_dependency(%q<thoughtbot-shoulda>, [">= 0"])
+    s.add_dependency(%q<shoulda>, [">= 0"])
+    s.add_dependency(%q<mocha>, [">= 0"])
   end
 end
