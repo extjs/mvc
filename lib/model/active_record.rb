@@ -68,21 +68,17 @@ module ExtJS
       # @return {Array}
       #
       def extjs_associations
-        #if @extjs_associations.nil?
-          extjs_associations = {}
-          self.reflections.keys.each do |key|
-            assn = self.reflections[key]
-            type = (assn.macro === :has_many || assn.macro === :has_and_belongs_to_many) ? :many : assn.macro
-            extjs_associations[key.to_sym] = {
-              :name => key.to_sym, 
-              :type => type, 
-              :class => assn.options[:polymorphic] ? nil : assn.class_name.constantize,
-              :foreign_key => assn.association_foreign_key.to_sym,
-              :is_polymorphic => !!assn.options[:polymorphic]
-            }
-          end
-        #end        
-        extjs_associations
+        @extjs_associations ||= self.reflections.inject({}) do |memo, (key, assn)|
+          type = (assn.macro === :has_many || assn.macro === :has_and_belongs_to_many) ? :many : assn.macro
+          memo[key.to_sym] = {
+            :name => key.to_sym, 
+            :type => type, 
+            :class => assn.options[:polymorphic] ? nil : assn.class_name.constantize,
+            :foreign_key => assn.association_foreign_key.to_sym,
+            :is_polymorphic => !!assn.options[:polymorphic]
+          }
+          memo
+        end
       end
     end
   end
