@@ -250,7 +250,7 @@ module ExtJS
         elsif arguments.size == 1 && arguments[0].is_a?(Symbol)
           fieldset = arguments.shift
         else
-          arguments = []
+          arguments.shift
         end
         [fieldset, arguments]
       end

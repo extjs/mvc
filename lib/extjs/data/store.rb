@@ -18,7 +18,7 @@ module ExtJS::Data
       @model      = self.get_model(options[:controller], options[:model])
 
       # Merge Reader/Proxy config
-      @config.merge!(@controller.extjs_reader(@model, options[:fieldset]))
+      @config.merge!(@controller.extjs_reader(@model, options[:fieldset] || :default))
       @config.merge!(@controller.extjs_proxy(options))
       @config["format"] = @format
 
