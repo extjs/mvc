@@ -8,8 +8,8 @@ module ExtJS::Data
     def initialize(*params)
       options = params.extract_options!
       options[:format] = 'json' if options[:format].nil?
-
-      @config = options[:config]
+      
+      @config     = options[:config]
       @format     = options[:format]
       @proxy      = options[:proxy] || 'http'
       @writer     = options[:writer]
@@ -18,7 +18,7 @@ module ExtJS::Data
       @model      = self.get_model(options[:controller], options[:model])
 
       # Merge Reader/Proxy config
-      @config.merge!(@controller.extjs_reader(@model))
+      @config.merge!(@controller.extjs_reader(@model, options[:fieldset]))
       @config.merge!(@controller.extjs_proxy(options))
       @config["format"] = @format
 

@@ -9,12 +9,12 @@ module ExtJS::Controller
   #
   module ClassMethods
 
-    def extjs_reader(model)
+    def extjs_reader(model, fieldset = nil)
       {
         "successProperty" => extjs_success_property,
         "root" => extjs_root,
         "messageProperty" => extjs_message_property
-      }.merge(model.extjs_record)
+      }.merge(model.extjs_record(fieldset))
     end
 
     def extjs_proxy(params)
