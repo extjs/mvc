@@ -1,8 +1,15 @@
 ##
 # MongoMapper adapter to ExtJS::Model mixin
 #
+    
 module ExtJS
   module Model
+    module InstanceMethods
+      def extjs_prepare_data(pk)
+        {pk => self.send(pk).to_s}
+      end
+    end
+    
     ##
     # ClassMethods
     #

@@ -1,6 +1,7 @@
 ##
 # DataMapper adapter for ExtJS::Model mixin
 #
+
 module ExtJS
   module Model
     module ClassMethods

@@ -37,7 +37,7 @@ module ExtJS
         pk      = self.class.extjs_primary_key
         
         # build the initial field data-hash
-        data    = {pk => self.send(pk)}
+        data    = extjs_prepare_data(pk)
          
         fields.each do |field|
           next if data.has_key? field[:name] # already processed (e.g. explicit mentioning of :id)
@@ -75,6 +75,15 @@ module ExtJS
           data[field[:name]] = value
         end
         data
+      end
+      
+      ##
+      # prepares the initial data-hash.  Had to implement this to fix a MongoMapper issue where pk
+      # is an Object.  Messed things up when converting to JSON.  Perhaps a better way is possible.
+      # Any adapter can override this but typical relational dbs with Integer pks won't need to.
+      #
+      def extjs_prepare_data(pk)
+        {pk => self.send(pk)}
       end
     end
     
@@ -276,7 +285,6 @@ module ExtJS
         end
         field
       end
-      
 
       # ##
       # # Returns an array of symbolized association names that will be referenced by a call to to_record
