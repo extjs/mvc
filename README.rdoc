@@ -127,6 +127,7 @@ Now render a store in an erb template:
 
     @store = extjs_store(
       :controller => "users",
+			:fieldset => :grid,	# <-- Specify a particular fieldset as defined in the Model (used to render DataReader)
       :proxy => "http"  # <-- default
       :format => "json" # <-- default
       :model => "user", # <-- default: controller_name.singularize
