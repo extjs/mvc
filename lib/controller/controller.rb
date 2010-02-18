@@ -9,7 +9,7 @@ module ExtJS::Controller
   #
   module ClassMethods
 
-    def extjs_reader(model, fieldset = nil)
+    def extjs_reader(model, fieldset = :default)
       {
         "successProperty" => extjs_success_property,
         "root" => extjs_root,

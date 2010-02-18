@@ -97,7 +97,6 @@ module ExtJS
       #
       def extjs_record(*fields)
         fieldset, fields = self.extjs_extract_fieldset! fields
-        
         if fields.empty?
           fields = self.extjs_get_fields_for_fieldset(fieldset)
         else
@@ -233,7 +232,6 @@ module ExtJS
               raise ArgumentError, "encountered a Hash that I don't know anyting to do with `#{f.inspect}:#{f.class}`"
             end
           else # should be a String or Symbol
-            puts params.inspect if f.nil?
             fields << {:name => f.to_sym}
           end
         end
@@ -251,6 +249,8 @@ module ExtJS
           arguments = arguments[0]
         elsif arguments.size == 1 && arguments[0].is_a?(Symbol)
           fieldset = arguments.shift
+        else
+          arguments = []
         end
         [fieldset, arguments]
       end
