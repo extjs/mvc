@@ -246,7 +246,7 @@ class ModelTest < Test::Unit::TestCase
     end
   end
   
-  context "polymorphic assosiations" do
+  context "polymorphic associations" do
     setup do
       clean_all
     end
@@ -262,7 +262,7 @@ class ModelTest < Test::Unit::TestCase
       assert_array_has_item(fields, 'addressable_type') {|f| f[:name] === 'addressable_type' && !f[:mapping] }
     end
     
-    should "create the right store config when including members of the polymorpic association" do
+    should "create the right store config when including members of the polymorphic association" do
       Address.extjs_fields :street, :addressable => [:name]
       fields = Address.extjs_record[:fields]
       assert_array_has_item(fields, "has addressable_name") {|f| f[:name] === 'addressable_name' && f[:mapping] === 'addressable.name'}
@@ -288,13 +288,13 @@ class ModelTest < Test::Unit::TestCase
       clean_all
     end
     
-    should "fieldsets should be accessible from decendants" do
+    should "fieldsets should be accessible from descendants" do
       Location.extjs_fieldset :on_location, [:street]
       fields = House.extjs_record(:on_location)[:fields]
       assert_array_has_item(fields, 'has street') {|f| f[:name] === 'street' }
       assert_array_has_not_item(fields, 'has name') {|f| f[:name] === 'name' }
     end
-    should "fieldsets should be overrideable from decendants" do
+    should "fieldsets should be overrideable from descendants" do
       Location.extjs_fieldset :override, [:street]
       House.extjs_fieldset :override, [:name]
       fields = House.extjs_record(:override)[:fields]
