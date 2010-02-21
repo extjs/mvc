@@ -16,6 +16,8 @@ module ExtJS
         require 'model/data_mapper'
       elsif defined?(MongoMapper)
         require 'model/mongo_mapper'
+      else
+        raise StandardError.new("extjs-mvc could not detect an ORM framework.  Be sure to include your ORM framework before initializing extjs-mvc Gem.")
       end
 
       # Rails-style Array#extract_options! used heavily
