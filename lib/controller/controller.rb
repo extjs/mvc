@@ -9,33 +9,6 @@ module ExtJS::Controller
   #
   module ClassMethods
 
-    def extjs_reader(model, fieldset)
-      {
-        "successProperty" => extjs_success_property,
-        "root" => extjs_root,
-        "messageProperty" => extjs_message_property
-      }.merge(model.extjs_record(fieldset))
-    end
-
-    def extjs_proxy(params)
-      proxy = {}
-      if params[:proxy] === 'direct'
-        actions = ['create', 'read', 'update', 'destroy']
-        proxy["api"] = {}
-        direct_actions.each_index do |n|
-          proxy["api"][actions[n]] = direct_actions[n][:name]
-        end
-      else
-        if params[:config]["api"]
-          proxy["api"] = {}
-          params[:config]["api"].each {|k,v| proxy["api"][k] = "/#{params[:controller]}/#{v}" }
-        else
-          proxy["url"] = "/#{params[:controller]}.#{params[:format].to_s}"
-        end
-      end
-      proxy
-    end
-
     def extjs_root(value=nil)
       ExtJS::MVC.root = value unless value.nil?
       ExtJS::MVC.root

@@ -7,19 +7,21 @@ module ExtJS::Data
 
     def initialize(*params)
       options = params.extract_options!
-      options[:format] = 'json' if options[:format].nil?
       
-      @config     = options[:config]
-      @format     = options[:format]
+      @config     = options[:config] || {}
+      @format     = options[:format] || 'json'
+      @fieldset   = options[:fieldset] || :default
+      @schema     = options[:schema]
       @proxy      = options[:proxy] || 'http'
       @writer     = options[:writer]
       @type       = (options[:type].nil?) ? @proxy === 'direct' ? 'Ext.data.DirectStore' : "Ext.data.#{@format.capitalize}Store" : options[:type] 
-      @controller = self.get_controller(options[:controller])
-      @model      = self.get_model(options[:controller], options[:model])
+      
+      @controller = self.class.get_controller(options[:controller])
+      @model      = self.class.get_model(options[:controller], options[:model])
 
       # Merge Reader/Proxy config
-      @config.merge!(@controller.extjs_reader(@model, options[:fieldset] || :default))
-      @config.merge!(@controller.extjs_proxy(options))
+      @config.merge!(reader)
+      @config.merge!(proxy)
       @config["format"] = @format
 
       # Set storeId implicitly based upon Model name if not set explicitly
@@ -63,8 +65,10 @@ module ExtJS::Data
         "<script>new #{@type}(#{@config.to_json});#{script}</script>"
       end
     end
+    
+private
 
-    def get_controller(name)
+    def self.get_controller(name)
       if (defined?(Rails))
         "#{name.to_s.camelize}Controller".constantize
       else
@@ -72,12 +76,41 @@ module ExtJS::Data
       end
     end
 
-    def get_model(controller, model)
+    def self.get_model(controller, model)
       if (defined?(Rails))
         ((model) ? model : controller.singularize).camelize.constantize
       else
         Extlib::Inflection.constantize(Extlib::Inflection.camelize(((model) ? model : Extlib::Inflection.singularize(controller))))
       end
     end
+    
+    def proxy
+      proxy = {}
+      if @proxy === 'direct'
+        actions = ['create', 'read', 'update', 'destroy']
+        proxy["api"] = {}
+        @controller.direct_actions.each_index do |n|
+          proxy["api"][actions[n]] = @controller.direct_actions[n][:name]
+        end
+      else
+        if @config["api"]
+          proxy["api"] = {}
+          @config["api"].each {|k,v| proxy["api"][k] = "/#{@controller.controller_name}/#{v}" }
+        else
+          proxy["url"] = "/#{@controller.controller_name}.#{@format.to_s}"
+        end
+      end
+      proxy
+    end
+    
+    def reader 
+      {
+        "successProperty" => @controller.extjs_success_property,
+        "root" => @controller.extjs_root,
+        "messageProperty" => @controller.extjs_message_property
+      }.merge(@schema || @model.extjs_record(@fieldset))
+    end
+    
+    
   end
 end
