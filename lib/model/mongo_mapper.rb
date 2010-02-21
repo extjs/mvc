@@ -4,12 +4,6 @@
     
 module ExtJS
   module Model
-    module InstanceMethods
-      def extjs_prepare_data(pk)
-        {pk => self.send(pk).to_s}
-      end
-    end
-    
     ##
     # ClassMethods
     #
@@ -28,19 +22,16 @@ module ExtJS
       end
 
       def extjs_associations
-        if @extjs_associations.nil?
-          @extjs_associations = {}
-          self.associations.keys.each do |key|
-            @extjs_associations[key.to_sym] = {
-              :name => key,
-              :type => self.associations[key].type,
-              :class => self.associations[key].class_name.constantize,
-              :foreign_key => self.associations[key].foreign_key,
-              :is_polymorphic => false # <-- no impl. for MM is_polymorhpic yet.  Anyone care to implement this?
-            }
-          end
+        @extjs_associations ||= self.associations.inject({}) do |memo, (key, assn)|
+          memo[key.to_sym] = {
+            :name => key.to_sym,
+            :type => assn.type,
+            :class => assn.class_name.constantize,
+            :foreign_key => assn.foreign_key,
+            :is_polymorphic => false
+          }
+          memo
         end
-        @extjs_associations
       end
 
       def extjs_type(col)
