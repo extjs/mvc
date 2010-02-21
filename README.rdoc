@@ -62,7 +62,7 @@ E.g. with the following definition:
     class User < ActiveRecord::Base
       include ExtJS::Model
 
-      extjs_fieldset :grid, [:name, :description, :company => [:name, :description]]
+      extjs_fieldset :grid, fields => [:name, :description, :company => [:name, :description]]
       extjs_fieldset :combo, [:full_name]
   
       def full_name
