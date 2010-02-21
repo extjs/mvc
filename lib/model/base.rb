@@ -54,7 +54,7 @@ module ExtJS
         pk      = self.class.extjs_primary_key
         
         # build the initial field data-hash
-        data    = extjs_prepare_data(pk)
+        data    = {pk => self.send(pk)}
          
         fields.each do |field|
           next if data.has_key? field[:name] # already processed (e.g. explicit mentioning of :id)
@@ -102,15 +102,6 @@ module ExtJS
         end
         data
       end
-      
-      ##
-      # prepares the initial data-hash.  Had to implement this to fix a MongoMapper issue where pk
-      # is an Object.  Messed things up when converting to JSON.  Perhaps a better way is possible.
-      # Any adapter can override this but typical relational dbs with Integer pks won't need to.
-      #
-      def extjs_prepare_data(pk)
-        {pk => self.send(pk)}
-      end
     end
     
     ##
@@ -154,12 +145,12 @@ module ExtJS
         rs            = []
         
         fields.each do |field|
+
           field = Marshal.load(Marshal.dump(field)) # making a deep copy
           
           if col = columns[field[:name]] # <-- column on this model                
             rs << self.extjs_field(field, col)      
           elsif assn = associations[field[:name]]
-            
             # skip this association if we already visited it
             # otherwise we could end up in a cyclic reference
             next if options[:visited_classes].include? assn[:class]
