@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{extjs-mvc}
-  s.version = "0.3.3"
+  s.version = "0.3.5"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Chris Scott"]
-  s.date = %q{2010-02-18}
+  s.date = %q{2010-02-21}
   s.description = %q{MVC tools to assist with ExtJS development in Rails and Merb}
   s.email = %q{christocracy@gmail.com}
   s.extra_rdoc_files = [
