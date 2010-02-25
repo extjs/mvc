@@ -35,12 +35,21 @@ fields with will be used to render the <tt>Ext.data.Record.create</tt> field-def
     # OR 
     extjs_fields :name, :description
     
+    # OR
+    extjs_fields :only => [:name, :description] # actually the same as above
+    
+    # OR
+    extjs_fields :additional => [:computed] # includes all database columns and an additional computed field
+    
     # OR define a column as a Hash
     extjs_fields :description, :name => {"sortDir" => "ASC"}, :created_at => {"dateFormat" => "c"}
 	
     # OR render associations, association-fields will have their "mapping" property set automatically
     extjs_fields :name, :description, :company => [:name, :description]
     
+    def computed
+      name.blank? ? login : name
+    end
   end
 
 After including the model mixin <tt>ExtJS::Model</tt>, try typing the following in <tt>irb</tt> console:
@@ -55,7 +64,7 @@ After including the model mixin <tt>ExtJS::Model</tt>, try typing the following 
 An auto-generated <tt>Ext.data.JsonReader</tt> configuration!
 
 
-You can also define different sets of fields for different representation of your model.
+You can also define different sets of fields for different representations of your model.
 
 E.g. with the following definition:
 
@@ -168,7 +177,7 @@ In individual model unit tests:
   future version unintentionally.
 * Commit, do not mess with rakefile, version, or history.
   (if you want to have your own version, that is fine but
-   bump version in a commit by itself I can ignore when I pull)
+  bump version in a commit by itself I can ignore when I pull)
 * Send me a pull request. Bonus points for topic branches.
 
 == Copyright

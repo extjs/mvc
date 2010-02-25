@@ -256,7 +256,9 @@ module ExtJS
         fields = []
         if params.size == 1 && params.last.is_a?(Hash) # peek into argument to see if its an option hash
           options = params.last
-          if options.has_key?(:exclude) && options[:exclude].is_a?(Array)
+          if options.has_key?(:additional) && options[:additional].is_a?(Array)
+            return self.process_fields(*(self.extjs_column_names + options[:additional].map(&:to_sym)))
+          elsif options.has_key?(:exclude) && options[:exclude].is_a?(Array)
             return self.process_fields(*(self.extjs_column_names - options[:exclude].map(&:to_sym)))
           elsif options.has_key?(:only) && options[:only].is_a?(Array)
             return self.process_fields(*options[:only])
