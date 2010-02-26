@@ -23,7 +23,10 @@ module ExtJS
       # @return {Boolean}
       #
       def extjs_allow_blank(col)
-        col.null
+        # if the column is the primary key always allow it to be blank.
+        # Otherwise we could not create new records with ExtJS because
+        # new records have no id and thus cannot be valid
+        col.name == self.primary_key || col.null
       end
       
       ##

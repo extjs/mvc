@@ -8,6 +8,9 @@ u = User.create(:password => "1234", :person => p)
 
 class BogusModel
   include ExtJS::Model
+  def additional_attribute
+    'computed value'
+  end
   class << self
     def extjs_allow_blank(col)
       true
@@ -409,6 +412,11 @@ class ModelTest < Test::Unit::TestCase
       should "handle option :exclude" do
         @fields = BogusModel.process_fields :exclude => [:two]
         assert_equal([{:name => :one}, {:name => :three_id}], @fields)
+      end
+      should "handle option :additional" do
+        @fields = BogusModel.process_fields :additional => [:additional_attribute]
+        assert_equal([{:name => :one}, {:name => :two}, {:name => :three_id}, {:name => :additional_attribute}], @fields)
+        
       end
       should "handle {:field => {:sortDir => 'ASC'}}" do
         @fields = BogusModel.process_fields({:field => {:sortDir => 'ASC'}})
