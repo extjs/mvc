@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Chris Scott"]
-  s.date = %q{2010-02-21}
+  s.date = %q{2010-02-25}
   s.description = %q{MVC tools to assist with ExtJS development in Rails and Merb}
   s.email = %q{christocracy@gmail.com}
   s.extra_rdoc_files = [
@@ -36,10 +36,20 @@ Gem::Specification.new do |s|
      "lib/model/mongo_mapper.rb",
      "lib/test/macros.rb",
      "test/active_record_test.rb",
+     "test/app/config/application.rb",
+     "test/app/config/database.yml",
+     "test/app/db/schema.rb",
+     "test/app/models/active_record/address.rb",
+     "test/app/models/active_record/data_type.rb",
+     "test/app/models/active_record/group.rb",
+     "test/app/models/active_record/house.rb",
+     "test/app/models/active_record/location.rb",
+     "test/app/models/active_record/person.rb",
+     "test/app/models/active_record/user.rb",
+     "test/app/models/active_record/user_group.rb",
      "test/component_test.rb",
      "test/controller_test.rb",
      "test/data_mapper_test.rb",
-     "test/database.yml",
      "test/debug.log",
      "test/model_test.rb",
      "test/mongo_mapper_test.rb",
@@ -59,12 +69,15 @@ Gem::Specification.new do |s|
     if Gem::Version.new(Gem::RubyGemsVersion) >= Gem::Version.new('1.2.0') then
       s.add_development_dependency(%q<shoulda>, [">= 0"])
       s.add_development_dependency(%q<mocha>, [">= 0"])
+      s.add_development_dependency(%q<extlib>, [">= 0"])
     else
       s.add_dependency(%q<shoulda>, [">= 0"])
       s.add_dependency(%q<mocha>, [">= 0"])
+      s.add_dependency(%q<extlib>, [">= 0"])
     end
   else
     s.add_dependency(%q<shoulda>, [">= 0"])
     s.add_dependency(%q<mocha>, [">= 0"])
+    s.add_dependency(%q<extlib>, [">= 0"])
   end
 end
