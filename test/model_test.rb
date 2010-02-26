@@ -1,5 +1,11 @@
 require 'test_helper'
 
+##
+# create a couple of related instances.
+#
+p = Person.create(:first => "Chris", :last => "Scott", :email => "chris@scott.com")
+u = User.create(:password => "1234", :person => p)
+
 class BogusModel
   include ExtJS::Model
   class << self
@@ -57,7 +63,7 @@ class ModelTest < Test::Unit::TestCase
   context "Rendering DataReader configuration for Person and User" do
 
 	  setup do
-	    clean_all
+	    App.clean_all
 	  end
 
 	  should "Person and User should render a valid Reader config" do
@@ -87,7 +93,7 @@ class ModelTest < Test::Unit::TestCase
   
   context "A User with HABTM relationship with Group" do
     setup do
-      clean_all
+      App.clean_all
       UserGroup.destroy_all
       
       @user = User.first
@@ -103,7 +109,7 @@ class ModelTest < Test::Unit::TestCase
 
   context "A User with Person relationship: User.extjs_fields(:password, :person => [:first, {:last => {'sortDir' => 'ASC'}}])" do
     setup do
-      clean_all
+      App.clean_all
       User.extjs_fields(:password, {:person => [:first, {:last => {:sortDir => "ASC"}}]})
 	    @fields = User.extjs_record[:fields]
     end
@@ -143,7 +149,7 @@ class ModelTest < Test::Unit::TestCase
   
   context "User with standard Person association" do
     setup do
-      clean_all
+      App.clean_all
       User.extjs_fields(:id, :password, :person)
     end
     should "produce a valid store config" do
@@ -168,7 +174,7 @@ class ModelTest < Test::Unit::TestCase
   
   context "Person with User association (has_one relationship)" do
     setup do
-      clean_all
+      App.clean_all
       User.extjs_fields(:id, :password)
       Person.extjs_fields(:id, :user)
     end
@@ -190,7 +196,7 @@ class ModelTest < Test::Unit::TestCase
   
   context "Person with User association (has_one/belongs_to relationship) cyclic reference" do
     setup do
-      clean_all
+      App.clean_all
       User.extjs_fields(:id, :person)
       Person.extjs_fields(:id, :user)
     end
@@ -210,7 +216,7 @@ class ModelTest < Test::Unit::TestCase
   
   context "Fields should render with correct, ExtJS-compatible data-types" do
     setup do
-      clean_all
+      App.clean_all
       @fields = DataType.extjs_record[:fields]
     end
     
@@ -248,7 +254,7 @@ class ModelTest < Test::Unit::TestCase
   
   context "polymorphic associations" do
     setup do
-      clean_all
+      App.clean_all
     end
     
     should "return nil as class for a polymorphic relation" do
@@ -285,7 +291,7 @@ class ModelTest < Test::Unit::TestCase
   
   context "single table inheritance" do
     setup do
-      clean_all
+      App.clean_all
     end
     
     should "fieldsets should be accessible from descendants" do

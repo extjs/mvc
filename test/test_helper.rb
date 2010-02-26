@@ -3,166 +3,30 @@ require 'test/unit'
 require 'shoulda'
 require 'mocha'
 
-require 'active_record'
-require 'active_support'
-
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
-$LOAD_PATH.unshift(File.dirname(__FILE__))
-
-require 'extjs-mvc'
-
-gem 'sqlite3-ruby'
-
 begin
   require 'ruby-debug'
 rescue LoadError
   puts "ruby-debug not loaded"
 end
 
-ROOT       = File.join(File.dirname(__FILE__), '..')
-RAILS_ROOT = ROOT
-RAILS_ENV  = "test"
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
+$LOAD_PATH.unshift(File.dirname(__FILE__))
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), 'app'))
 
-FIXTURES_DIR = File.join(File.dirname(__FILE__), "fixtures") 
-config = YAML::load(IO.read(File.dirname(__FILE__) + '/database.yml'))
-#ActiveRecord::Base.logger = Logger.new(File.dirname(__FILE__) + "/debug.log")
-ActiveRecord::Base.establish_connection(config['test'])
-
+ROOT  = File.join(File.dirname(__FILE__), 'app')
+require "config/application"
 
 ##
-# build User / Person models
-# Move AR-specific stuff to AR test adapter
+# Boot test app.
+# TODO, send orm as param from console
+# eg: >rake test data_mapper
+#     >rake test mongo_mapper
 #
-class User < ActiveRecord::Base
-  include ExtJS::Model
-  belongs_to :person
-  #has_many :user_groups
-  #has_many :groups, :through => :user_groups
-  has_and_belongs_to_many :groups, :join_table => :user_groups
-  
-end
+App = Test::App.new(:active_record)
 
-class Person < ActiveRecord::Base
-  has_one :user
-  include ExtJS::Model
-end
+#FIXTURES_DIR  = File.join(File.dirname(__FILE__), "fixtures") 
 
-class DataType < ActiveRecord::Base
-  include ExtJS::Model
-end
-
-class UserGroup < ActiveRecord::Base
-  belongs_to :user
-  belongs_to :group
-end
-
-class Group < ActiveRecord::Base
-  has_many :users
-  include ExtJS::Model
-end
-
-class Location < ActiveRecord::Base
-  has_one :address, :as => :addressable
-  include ExtJS::Model
-end
-class House < Location
-end
-class Address < ActiveRecord::Base
-  belongs_to :addressable, :polymorphic => true
-  include ExtJS::Model
-end
 
 class Test::Unit::TestCase
 end
 
-##
-# build simple database
-#
-# people
-#
-ActiveRecord::Base.connection.create_table :users, :force => true do |table|
-  table.column :id, :serial
-  table.column :person_id, :integer
-  table.column :password, :string
-  table.column :created_at, :date
-  table.column :disabled, :boolean, :default => true
-end
-##
-# people
-#
-ActiveRecord::Base.connection.create_table :people, :force => true do |table|
-  table.column :id, :serial
-  table.column :first, :string, :null => false
-  table.column :last, :string, :null => false
-  table.column :email, :string, :null => false
-end
-##
-# user_groups, join table
-#
-ActiveRecord::Base.connection.create_table :user_groups, :force => true do |table|
-  table.column :user_id, :integer
-  table.column :group_id, :integer
-end
-
-##
-# groups
-#
-ActiveRecord::Base.connection.create_table :groups, :force => true do |table|
-  table.column :id, :serial
-  table.column :title, :string
-end
-
-##
-# locations
-#
-ActiveRecord::Base.connection.create_table :locations, :force => true do |table|
-  table.column :id, :serial
-  table.column :name, :string
-  table.column :street, :string
-  table.column :type, :string
-end
-
-##
-# addresses
-#
-ActiveRecord::Base.connection.create_table :addresses, :force => true do |table|
-  table.column :id, :serial
-  table.column :addressable_type, :string
-  table.column :addressable_id, :integer
-  table.column :street, :string
-end
-
-##
-# Mock a Model for testing data-types
-#
-ActiveRecord::Base.connection.create_table :data_types, :force => true do |table|
-  table.column :id, :serial
-  table.column :string_column, :string
-  table.column :decimal_column, :decimal
-  table.column :float_column, :float
-  table.column :date_column, :date
-  table.column :datetime_column, :datetime
-  table.column :time_column, :time
-  table.column :email, :string
-  table.column :integer_column, :integer
-  table.column :notnull_column, :string, :null => false
-  table.column :default_column, :boolean, :default => true
-  table.column :boolean_column, :boolean
-end
-
-##
-# create a couple of related instances.
-#
-p = Person.create(:first => "Chris", :last => "Scott", :email => "chris@scott.com")
-u = User.create(:password => "1234", :person => p)
-
-def clean klass
-  klass.instance_variables.each do |var_name|
-    if /\A@extjs_fieldsets__/ =~ var_name.to_s
-      klass.instance_variable_set( var_name.to_sym, nil )
-    end
-  end
-end
-def clean_all
-  [User, Person, DataType, UserGroup, Group, Location, House, Address].map { |klass| clean klass }
-end
