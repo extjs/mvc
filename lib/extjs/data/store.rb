@@ -75,13 +75,20 @@ private
         Extlib::Inflection.constantize("#{Extlib::Inflection.camelize(name)}")
       end
     end
-
+    
+    :model => 'product',
+    :model => Product
+    :model => nil
+    
     def self.get_model(controller, model)
-      if (defined?(Rails))
-        ((model) ? model : controller.singularize).camelize.constantize
-      else
-        Extlib::Inflection.constantize(Extlib::Inflection.camelize(((model) ? model : Extlib::Inflection.singularize(controller))))
+      unless model.class == Class
+        if (defined?(Rails))
+          model = ((model) ? model : controller.singularize).camelize.constantize
+        else
+          model = Extlib::Inflection.constantize(Extlib::Inflection.camelize(((model) ? model : Extlib::Inflection.singularize(controller))))
+        end
       end
+      model
     end
     
     def proxy
