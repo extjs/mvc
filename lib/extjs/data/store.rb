@@ -75,11 +75,7 @@ private
         Extlib::Inflection.constantize("#{Extlib::Inflection.camelize(name)}")
       end
     end
-    
-    :model => 'product',
-    :model => Product
-    :model => nil
-    
+        
     def self.get_model(controller, model)
       unless model.class == Class
         if (defined?(Rails))
