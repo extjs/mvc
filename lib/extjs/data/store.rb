@@ -69,19 +69,27 @@ module ExtJS::Data
 private
 
     def self.get_controller(name)
-      if (defined?(Rails))
-        "#{name.to_s.camelize}Controller".constantize
-      else
-        Extlib::Inflection.constantize("#{Extlib::Inflection.camelize(name)}")
+      begin
+        if (defined?(Rails))
+          "#{name.to_s.camelize}Controller".constantize
+        else
+          Extlib::Inflection.constantize("#{Extlib::Inflection.camelize(name)}")
+        end
+      rescue NameError
+        throw NameError.new("ExtJS::Store failed with an unknown controller named '#{name.to_s}'")
       end
     end
         
     def self.get_model(controller, model)
       unless model.class == Class
-        if (defined?(Rails))
-          model = ((model) ? model : controller.singularize).camelize.constantize
-        else
-          model = Extlib::Inflection.constantize(Extlib::Inflection.camelize(((model) ? model : Extlib::Inflection.singularize(controller))))
+        begin
+          if (defined?(Rails))
+            model = ((model) ? model : controller.singularize).camelize.constantize
+          else
+            model = Extlib::Inflection.constantize(Extlib::Inflection.camelize(((model) ? model : Extlib::Inflection.singularize(controller))))
+          end
+        rescue NameError => e
+          throw NameError.new("EXTJS::Store found an unknown model #{model.to_s})")
         end
       end
       model
