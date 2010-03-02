@@ -356,8 +356,8 @@ module ExtJS
           elsif arguments[0].is_a?(Hash)
             options.update(arguments[0])
           end
-        elsif arguments.size == 1 && arguments[0].is_a?(Symbol)
-          fieldset = arguments.shift
+        elsif arguments.size == 1 && (arguments[0].is_a?(Symbol) || arguments[0].is_a?(String))
+          fieldset = arguments.shift.to_sym
         elsif arguments.size == 1 && arguments[0].is_a?(Hash)
           fieldset = arguments[0].delete(:fieldset) || :default
           options.update(arguments[0])
