@@ -22,6 +22,10 @@ module ExtJS::Data
       # Merge Reader/Proxy config
       @config.merge!(reader)
       @config.merge!(proxy)
+      
+      @config["baseParams"] = {} if @config["baseParams"].nil?
+      @config["baseParams"].update("fieldset" => @fieldset)
+      
       @config["format"] = @format
 
       # Set storeId implicitly based upon Model name if not set explicitly
