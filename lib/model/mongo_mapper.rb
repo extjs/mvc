@@ -10,7 +10,7 @@ module ExtJS
     module ClassMethods
 
       def extjs_primary_key
-        :_id
+        :id
       end
 
       def extjs_column_names
