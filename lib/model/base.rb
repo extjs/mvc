@@ -1,6 +1,6 @@
 module ExtJS
   module Model
-    
+
     def self.included(model)
       model.send(:extend, ClassMethods)
       model.send(:include, InstanceMethods)
@@ -18,7 +18,7 @@ module ExtJS
     # InstanceMethods
     #
     module InstanceMethods
-      
+
       ##
       # Converts a model instance to a record compatible with ExtJS
       #
@@ -29,7 +29,7 @@ module ExtJS
       #
       # All these are valid calls:
       #
-      #  user.to_record             # returns record for :default fieldset 
+      #  user.to_record             # returns record for :default fieldset
       #                             # (fieldset is autmatically defined, if not set)
       #
       #  user.to_record :fieldset   # returns record for :fieldset fieldset
@@ -37,36 +37,36 @@ module ExtJS
       #
       #  user.to_record :fields => [:id, :password]
       #                             # returns record for the fields 'id' and 'password'
-      # 
+      #
       # For even more valid options for this method (which all should not be neccessary to use)
       # have a look at ExtJS::Model::Util.extract_fieldset_and_options
       def to_record(*params)
         fieldset, options = Util.extract_fieldset_and_options params
-        
+
         fields = []
         if options[:fields].empty?
           fields = self.class.extjs_get_fields_for_fieldset(fieldset)
         else
           fields = self.class.process_fields(*options[:fields])
         end
-        
+
         assns   = self.class.extjs_associations
         pk      = self.class.extjs_primary_key
-        
+
         # build the initial field data-hash
         data    = {pk => self.send(pk)}
-         
+
         fields.each do |field|
           next if data.has_key? field[:name] # already processed (e.g. explicit mentioning of :id)
-          
+
           value = nil
           if association_reflection = assns[field[:name]] # if field is an association
             association = self.send(field[:name])
-            
+
             # skip this association if we already visited it
             # otherwise we could end up in a cyclic reference
             next if options[:visited_classes].include? association.class
-            
+
             case association_reflection[:type]
             when :belongs_to, :has_one
               if association.respond_to? :to_record
@@ -74,7 +74,7 @@ module ExtJS
                 if assn_fields.nil?
                   assn_fields = association.class.extjs_get_fields_for_fieldset(field.fetch(:fieldset, fieldset))
                 end
-                
+
                 value = association.to_record :fields => assn_fields,
                   :visited_classes => options[:visited_classes] + [self.class]
               else
@@ -103,7 +103,7 @@ module ExtJS
         data
       end
     end
-    
+
     ##
     # ClassMethods
     #
@@ -119,7 +119,7 @@ module ExtJS
       #
       # All these are valid calls:
       #
-      #  User.extjs_record             # returns record config for :default fieldset 
+      #  User.extjs_record             # returns record config for :default fieldset
       #                                # (fieldset is autmatically defined, if not set)
       #
       #  User.extjs_record :fieldset   # returns record config for :fieldset fieldset
@@ -127,57 +127,57 @@ module ExtJS
       #
       #  User.extjs_record :fields => [:id, :password]
       #                                # returns record config for the fields 'id' and 'password'
-      # 
+      #
       # For even more valid options for this method (which all should not be neccessary to use)
       # have a look at ExtJS::Model::Util.extract_fieldset_and_options
       def extjs_record(*params)
         fieldset, options = Util.extract_fieldset_and_options params
-        
+
         if options[:fields].empty?
           fields = self.extjs_get_fields_for_fieldset(fieldset)
         else
           fields = self.process_fields(*options[:fields])
         end
-        
+
         associations  = self.extjs_associations
         columns       = self.extjs_columns_hash
         pk            = self.extjs_primary_key
         rs            = []
-        
+
         fields.each do |field|
 
           field = Marshal.load(Marshal.dump(field)) # making a deep copy
-          
-          if col = columns[field[:name]] # <-- column on this model                
-            rs << self.extjs_field(field, col)      
+
+          if col = columns[field[:name]] # <-- column on this model
+            rs << self.extjs_field(field, col)
           elsif assn = associations[field[:name]]
             # skip this association if we already visited it
             # otherwise we could end up in a cyclic reference
             next if options[:visited_classes].include? assn[:class]
-            
+
             assn_fields = field[:fields]
             if assn[:class].respond_to?(:extjs_record)  # <-- exec extjs_record on assn Model.
               if assn_fields.nil?
                 assn_fields = assn[:class].extjs_get_fields_for_fieldset(field.fetch(:fieldset, fieldset))
               end
-              
+
               record = assn[:class].extjs_record(field.fetch(:fieldset, fieldset), { :visited_classes => options[:visited_classes] + [self], :fields => assn_fields})
-              rs.concat(record[:fields].collect { |assn_field| 
+              rs.concat(record[:fields].collect { |assn_field|
                 self.extjs_field(assn_field, :parent_trail => field[:name], :mapping => field[:name], :allowBlank => true) # <-- allowBlank on associated data?
               })
             elsif assn_fields  # <-- :parent => [:id, :name, :sub => [:id, :name]]
               field_collector = Proc.new do |parent_trail, mapping, assn_field|
                 if assn_field.is_a?(Hash) && assn_field.keys.size == 1 && assn_field.keys[0].is_a?(Symbol) && assn_field.values[0].is_a?(Array)
-                  field_collector.call(parent_trail.to_s + self.extjs_parent_trail_template.call(assn_field.keys.first), "#{mapping}.#{assn_field.keys.first}", assn_field.values.first) 
+                  field_collector.call(parent_trail.to_s + self.extjs_parent_trail_template.call(assn_field.keys.first), "#{mapping}.#{assn_field.keys.first}", assn_field.values.first)
                 else
                   self.extjs_field(assn_field, :parent_trail => parent_trail, :mapping => mapping, :allowBlank => true)
                 end
               end
               rs.concat(assn_fields.collect { |assn_field| field_collector.call(field[:name], field[:name], assn_field) })
-            else  
+            else
               rs << extjs_field(field)
             end
-            
+
             # attach association's foreign_key if not already included.
             if columns.has_key?(assn[:foreign_key]) && !rs.any? { |r| r[:name] == assn[:foreign_key] }
               rs << extjs_field({:name => assn[:foreign_key]}, columns[assn[:foreign_key]])
@@ -193,13 +193,13 @@ module ExtJS
             rs << extjs_field(field)
           end
         end
-        
+
         return {
           :fields => rs,
           :idProperty => pk
         }
       end
-      
+
       ##
       # meant to be used within a Model to define the extjs record fields.
       # eg:
@@ -216,7 +216,7 @@ module ExtJS
         var_name = :"@extjs_fieldsets__#{fieldset}"
         self.instance_variable_set( var_name, self.process_fields(*options[:fields]) )
       end
-      
+
       def extjs_get_fields_for_fieldset(fieldset)
         var_name = :"@extjs_fieldsets__#{fieldset}"
         super_value = nil
@@ -228,7 +228,7 @@ module ExtJS
         end
         super_value || self.instance_variable_get( var_name )
       end
-      
+
       ##
       # shortcut to define the default fieldset. For backwards-compatibility.
       #
@@ -237,9 +237,9 @@ module ExtJS
           :fields => params
         })
       end
-      
+
       ##
-      # Prepare a field configuration list into a normalized array of Hashes, {:name => "field_name"} 
+      # Prepare a field configuration list into a normalized array of Hashes, {:name => "field_name"}
       # @param {Mixed} params
       # @return {Array} of Hashes
       #
@@ -255,11 +255,11 @@ module ExtJS
             return self.process_fields(*options[:only])
           end
         end
-        
+
         params = self.extjs_column_names if params.empty?
-        
+
         associations = extjs_associations
-        
+
         params.each do |f|
           if f.kind_of?(Hash)
             if f.keys.size == 1 && f.keys[0].is_a?(Symbol) && f.values[0].is_a?(Array) # {:association => [:field1, :field2]}
@@ -279,16 +279,16 @@ module ExtJS
             fields << {:name => f.to_sym}
           end
         end
-        
+
         fields
       end
-      
+
       ##
       # Render a column-config object
       # @param {Hash/Column} field Field-configuration Hash, probably has :name already set and possibly Ext.data.Field options.
       # @param {ORM Column Object from AR, DM or MM}
       #
-      def extjs_field(field, config=nil)  
+      def extjs_field(field, config=nil)
         if config.kind_of? Hash
           if config.has_key?(:mapping) && config.has_key?(:parent_trail)
             field.update( # <-- We use a template for rendering mapped field-names.
@@ -303,8 +303,8 @@ module ExtJS
             :type => self.extjs_type(config),
             :defaultValue => self.extjs_default(config)
           )
-          field[:dateFormat] = "c" if field[:type] === "date" && field[:dateFormat].nil? # <-- ugly hack for date  
-        end  
+          field[:dateFormat] = "c" if field[:type] === "date" && field[:dateFormat].nil? # <-- ugly hack for date
+        end
         field.update(:type => "auto") if field[:type].nil?
         # convert Symbol values to String values
         field.keys.each do |k|
@@ -332,11 +332,11 @@ module ExtJS
       #   @extjs_used_associations
       # end
     end
-    
+
     module Util
-      
+
       ##
-      # returns the fieldset from the arguments and normalizes the options. 
+      # returns the fieldset from the arguments and normalizes the options.
       # @return [{Symbol}, {Hash}]
       def self.extract_fieldset_and_options arguments
         orig_args = arguments

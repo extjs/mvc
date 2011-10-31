@@ -5,15 +5,15 @@
 module ExtJS
   module Model
     module ClassMethods
-      
+
       def extjs_primary_key
         self.key.first.name
       end
-      
+
       def extjs_column_names
         self.properties.collect {|p| p.name.to_s }
       end
-      
+
       def extjs_columns_hash
         if @extjs_columns_hash.nil?
           @extjs_columns_hash = {}
@@ -23,11 +23,11 @@ module ExtJS
         end
         @extjs_columns_hash
       end
-      
+
       def extjs_allow_blank(col)
          (col === self.key.first) ? true : col.nullable?
       end
-      
+
       def extjs_type(col)
         type = ((col.type.respond_to?(:primitive)) ? col.type.primitive : col.type).to_s
         case type
@@ -43,14 +43,14 @@ module ExtJS
             type = "auto"
         end
       end
-      
+
       def extjs_associations
-        if @extjs_associations.nil?  
+        if @extjs_associations.nil?
           @extjs_associations = {}
           self.relationships.keys.each do |key|
             assn = self.relationships[key]
             @extjs_associations[key.to_sym] = {
-              :name => key, 
+              :name => key,
               :type => type = (assn.options[:max].nil? && assn.options[:min].nil?) ? :belongs_to : (assn.options[:max] > 1) ? :many : nil ,
               :class => assn.parent_model,
               :foreign_key => assn.child_key.first.name,

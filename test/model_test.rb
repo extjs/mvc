@@ -15,19 +15,19 @@ class BogusModel
     def extjs_allow_blank(col)
       true
     end
-    
+
     def extjs_default(col)
       nil
     end
-    
+
     def extjs_type(col)
       nil
     end
-    
+
     def extjs_column_names
       [:one, :two, :three_id]
     end
-    
+
     def extjs_columns_hash
       {
         :one   => {},
@@ -35,15 +35,15 @@ class BogusModel
         :three_id => {}
       }
     end
-    
+
     def extjs_polymorphic_type(id_column_name)
       id_column_name.to_s.gsub(/_id\Z/, '_type').to_sym
     end
-    
+
     def extjs_primary_key
       :id
     end
- 
+
     def extjs_associations
       {
         :three => {
@@ -91,19 +91,19 @@ class ModelTest < Test::Unit::TestCase
 	    assn = User.extjs_associations[:person]
 	    assert rec.keys.include?(assn[:foreign_key])
 	  end
-	  
+
   end
-  
+
   context "A User with HABTM relationship with Group" do
     setup do
       App.clean_all
       UserGroup.destroy_all
-      
+
       @user = User.first
       UserGroup.create(:user => @user, :group => Group.create(:title => "Merb"))
       UserGroup.create(:user => @user, :group => Group.create(:title => "Rails"))
     end
-    
+
     should "Render to_record should return 2 groups" do
       User.extjs_fields(:groups)
       assert @user.to_record[:groups].length == 2
@@ -116,7 +116,7 @@ class ModelTest < Test::Unit::TestCase
       User.extjs_fields(:password, {:person => [:first, {:last => {:sortDir => "ASC"}}]})
 	    @fields = User.extjs_record[:fields]
     end
-    
+
     should "User should render a Reader with 4 total fields" do
 	    assert @fields.count === 4
     end
@@ -124,7 +124,7 @@ class ModelTest < Test::Unit::TestCase
       assert_array_has_item(@fields, 'has password field') {|f| f[:name] === "password"}
     end
     should "Reader fields should contain person_id" do
-      assns = User.extjs_associations  
+      assns = User.extjs_associations
       assn = assns[:person]
       assert_array_has_item(@fields, 'has foreign key person_id') {|f| f[:name] === assns[:person][:foreign_key].to_s }
     end
@@ -137,7 +137,7 @@ class ModelTest < Test::Unit::TestCase
     should "person.last should have additional configuration 'sortDir' => 'ASC'" do
       assert_array_has_item(@fields, 'has person.last with sortDir') {|f| f[:name] === "person_last" and f[:sortDir] === 'ASC' }
     end
-    
+
     should "produce a valid to_record record" do
       person = Person.create!(:first => 'first', :last => 'last', :email => 'email')
       user = User.create!(:person_id => person.id, :password => 'password')
@@ -149,7 +149,7 @@ class ModelTest < Test::Unit::TestCase
       assert_equal('first', record[:person][:first])
     end
   end
-  
+
   context "User with standard Person association" do
     setup do
       App.clean_all
@@ -174,7 +174,7 @@ class ModelTest < Test::Unit::TestCase
       assert_equal('first', record[:person][:first])
     end
   end
-  
+
   context "Person with User association (has_one relationship)" do
     setup do
       App.clean_all
@@ -196,7 +196,7 @@ class ModelTest < Test::Unit::TestCase
       assert_equal('password', record[:user][:password])
     end
   end
-  
+
   context "Person with User association (has_one/belongs_to relationship) cyclic reference" do
     setup do
       App.clean_all
@@ -216,13 +216,13 @@ class ModelTest < Test::Unit::TestCase
       assert_equal(user.id, record[:user][:id])
     end
   end
-  
+
   context "Fields should render with correct, ExtJS-compatible data-types" do
     setup do
       App.clean_all
       @fields = DataType.extjs_record[:fields]
     end
-    
+
     should "Understand 'string'" do
       assert_array_has_item(@fields, 'has string_column with string') {|f| f[:name] == 'string_column' and f[:type] == 'string'}
     end
@@ -254,23 +254,23 @@ class ModelTest < Test::Unit::TestCase
       assert_array_has_item(@fields, 'has default_column with defaultValue == true') {|f| f[:name] == 'default_column' and f[:defaultValue] === true}
     end
   end
-  
+
   context "polymorphic associations" do
     setup do
       App.clean_all
     end
-    
+
     should "return nil as class for a polymorphic relation" do
       assert_equal(nil, Address.extjs_associations[:addressable][:class])
     end
-    
+
     should "create a proper default store config" do
       Address.extjs_fields
       fields = Address.extjs_record[:fields]
       assert_array_has_item(fields, 'has addressable_id') {|f| f[:name] === 'addressable_id' && !f[:mapping] }
       assert_array_has_item(fields, 'addressable_type') {|f| f[:name] === 'addressable_type' && !f[:mapping] }
     end
-    
+
     should "create the right store config when including members of the polymorphic association" do
       Address.extjs_fields :street, :addressable => [:name]
       fields = Address.extjs_record[:fields]
@@ -278,7 +278,7 @@ class ModelTest < Test::Unit::TestCase
       assert_array_has_item(fields, "has addressable_id") {|f| f[:name] === 'addressable_id' && !f[:mapping] }
       assert_array_has_item(fields, "has addressable_type") {|f| f[:name] === 'addressable_type' && !f[:mapping] }
     end
-    
+
     should "fill in the right values for to_record" do
       Address.extjs_fields :street, :addressable => [:name]
       location = Location.create!(:name => 'Home')
@@ -291,12 +291,12 @@ class ModelTest < Test::Unit::TestCase
       assert_equal("Main Street 1", record[:street])
     end
   end
-  
+
   context "single table inheritance" do
     setup do
       App.clean_all
     end
-    
+
     should "fieldsets should be accessible from descendants" do
       Location.extjs_fieldset :on_location, [:street]
       fields = House.extjs_record(:on_location)[:fields]
@@ -311,7 +311,7 @@ class ModelTest < Test::Unit::TestCase
       assert_array_has_item(fields, 'has name') {|f| f[:name] === 'name' }
     end
   end
-  
+
   context "ExtJS::Model::Util" do
     context "#extract_fieldset_and_options default" do
       setup do
@@ -338,7 +338,7 @@ class ModelTest < Test::Unit::TestCase
         assert_equal([:one, :two, :three], @fields)
       end
     end
-    
+
     context "#extract_fieldset_and_options with explicit fieldset definition and hash with fields" do
       setup do
         @fieldset, @options = ExtJS::Model::Util.extract_fieldset_and_options [:explicit, {:fields => [:one, :two, :three]}]
@@ -351,7 +351,7 @@ class ModelTest < Test::Unit::TestCase
         assert_equal([:one, :two, :three], @fields)
       end
     end
-    
+
     context "#extract_fieldset_and_options with only a hash" do
       setup do
         @fieldset, @options = ExtJS::Model::Util.extract_fieldset_and_options [{:fieldset => :explicit, :fields => [:one, :two, :three]}]
@@ -364,7 +364,7 @@ class ModelTest < Test::Unit::TestCase
         assert_equal([:one, :two, :three], @fields)
       end
     end
-    
+
     context "#extract_fieldset_and_options edge cases" do
       should "called without arguments" do
         @fieldset, @options = ExtJS::Model::Util.extract_fieldset_and_options []
@@ -386,9 +386,9 @@ class ModelTest < Test::Unit::TestCase
       end
     end
   end
-  
+
   context "ExtJS::Model::ClassMethods" do
-    
+
     context "#process_fields" do
       should "handle a simple Array of Symbols" do
         @fields = BogusModel.process_fields :one, :two, :three
@@ -401,8 +401,8 @@ class ModelTest < Test::Unit::TestCase
       should "handle a mixed Array where a middle item is a Hash" do
         @fields = BogusModel.process_fields :one, {:two => [:two_one, :two_two]}, :three
         assert_equal([
-          {:name => :one}, 
-          {:name => :two, :fields => [{:name => :two_one}, {:name => :two_two}]}, 
+          {:name => :one},
+          {:name => :two, :fields => [{:name => :two_one}, {:name => :two_two}]},
           {:name => :three}], @fields)
       end
       should "handle option :only" do
@@ -416,7 +416,7 @@ class ModelTest < Test::Unit::TestCase
       should "handle option :additional" do
         @fields = BogusModel.process_fields :additional => [:additional_attribute]
         assert_equal([{:name => :one}, {:name => :two}, {:name => :three_id}, {:name => :additional_attribute}], @fields)
-        
+
       end
       should "handle {:field => {:sortDir => 'ASC'}}" do
         @fields = BogusModel.process_fields({:field => {:sortDir => 'ASC'}})
@@ -434,7 +434,7 @@ class ModelTest < Test::Unit::TestCase
         assert_raise(ArgumentError) { @fields = BogusModel.process_fields(:one, {:nme => :field,:sortDir => 'ASC'}) }
       end
     end
-    
+
     context "#extjs_field" do
       should "type gets set to 'auto' when not present" do
         @field = BogusModel.extjs_field({:name => :test})
@@ -449,7 +449,7 @@ class ModelTest < Test::Unit::TestCase
       end
 
     end
-    
+
     context "#extjs_field with ORM config" do
       should "set allowBlank" do
         BogusModel.expects(:extjs_allow_blank).returns(false)
@@ -477,7 +477,7 @@ class ModelTest < Test::Unit::TestCase
         assert_equal('not-c', @field[:dateFormat])
       end
     end
-    
+
     context "#extjs_field with Hash config" do
       should "set correct name and mapping" do
         @field = BogusModel.extjs_field({:name => :son}, {:mapping => 'grandfather.father', :parent_trail => 'grandfather_father'})
@@ -489,7 +489,7 @@ class ModelTest < Test::Unit::TestCase
         assert_equal('ASC', @field[:sortDir])
       end
     end
-    
+
     context "#extjs_get_fields_for_fieldset" do
       should "return full list of columns for fieldset that was not defined, yet" do
         @fields = BogusModel.extjs_get_fields_for_fieldset :not_there
@@ -521,6 +521,6 @@ class ModelTest < Test::Unit::TestCase
   def assert_array_has_not_item array, item_description, &blk
     assert !array.find {|i| blk.call(i) }, "The array #{array.inspect} should not #{item_description} but it does"
   end
-  
+
 end
 

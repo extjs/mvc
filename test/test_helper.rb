@@ -24,7 +24,7 @@ require "config/application"
 #
 App = Test::App.new(:active_record)
 
-#FIXTURES_DIR  = File.join(File.dirname(__FILE__), "fixtures") 
+#FIXTURES_DIR  = File.join(File.dirname(__FILE__), "fixtures")
 
 
 class Test::Unit::TestCase
