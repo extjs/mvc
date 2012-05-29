@@ -6,9 +6,9 @@ module ExtJS
       cattr_accessor :success_property
       cattr_accessor :message_property
       cattr_accessor :root
-      
+
       require 'model/base'
-      
+
       # Detect orm, include appropriate mixin.
       if defined?(ActiveRecord)
         require 'model/active_record'

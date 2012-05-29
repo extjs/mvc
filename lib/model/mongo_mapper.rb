@@ -1,7 +1,7 @@
 ##
 # MongoMapper adapter to ExtJS::Model mixin
 #
-    
+
 module ExtJS
   module Model
     ##
@@ -53,11 +53,11 @@ module ExtJS
       def extjs_allow_blank(col)
         (col.name == '_id') || (col.options[:required] != true)
       end
-      
+
       def extjs_default(col)
         col.default_value
       end
-      
+
     end
   end
 end

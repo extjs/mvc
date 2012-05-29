@@ -10,7 +10,7 @@ See tutorial http://www.extjs.com/blog/2009/09/30/ext-js-on-rails-a-comprehensiv
 	% sudo gem install extjs-mvc
 
 <b>Rails Installation:</b>
-In <tt>environment.rb</tt>, 
+In <tt>environment.rb</tt>,
 
     Rails::Initializer.run do |config|
         config.gem "extjs-mvc"
@@ -18,7 +18,7 @@ In <tt>environment.rb</tt>,
 
 <b>Merb installation:</b>
 In <tt>config/dependencies.rb</tt>, Add extjs-mvc as a new dependency
-	
+
 	dependency "extjs-mvc"
 
 === An ORM Model mixin:  ExtJS::Model
@@ -31,22 +31,22 @@ fields with will be used to render the <tt>Ext.data.Record.create</tt> field-def
     include ExtJS::Model
 
     extjs_fields :exclude => [:password, :password_confirmation]
-    
-    # OR 
+
+    # OR
     extjs_fields :name, :description
-    
+
     # OR
     extjs_fields :only => [:name, :description] # actually the same as above
-    
+
     # OR
     extjs_fields :additional => [:computed] # includes all database columns and an additional computed field
-    
+
     # OR define a column as a Hash
     extjs_fields :description, :name => {"sortDir" => "ASC"}, :created_at => {"dateFormat" => "c"}
-	
+
     # OR render associations, association-fields will have their "mapping" property set automatically
     extjs_fields :name, :description, :company => [:name, :description]
-    
+
     def computed
       name.blank? ? login : name
     end
@@ -73,7 +73,7 @@ E.g. with the following definition:
 
       extjs_fieldset :grid, fields => [:name, :description, :company => [:name, :description]]
       extjs_fieldset :combo, [:full_name]
-  
+
       def full_name
         "#{first_name} #{name}"
       end
@@ -83,7 +83,7 @@ You can get store configs for both representations with
     User.extjs_record(:grid)
 or
     User.extjs_record(:combo)
-    
+
 And the corresponding data for the representations with
     User.first.to_record(:grid)
 or
@@ -97,7 +97,7 @@ The <tt>extjs-mvc</tt> Gem includes a framework agnostic Controller mixin which 
     class UsersController < ActionController::Base
         include ExtJS::Controller
     end
-	
+
 === View Helper:  ExtJS::Helpers::Component
 
 <b>usage:</b>

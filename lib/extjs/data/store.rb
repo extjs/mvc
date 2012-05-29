@@ -7,25 +7,25 @@ module ExtJS::Data
 
     def initialize(*params)
       options = params.extract_options!
-      
+
       @config     = options[:config] || {}
       @format     = options[:format] || 'json'
       @fieldset   = options[:fieldset] || :default
       @schema     = options[:schema]
       @proxy      = options[:proxy] || 'http'
       @writer     = options[:writer]
-      @type       = (options[:type].nil?) ? @proxy === 'direct' ? 'Ext.data.DirectStore' : "Ext.data.#{@format.capitalize}Store" : options[:type] 
-      
+      @type       = (options[:type].nil?) ? @proxy === 'direct' ? 'Ext.data.DirectStore' : "Ext.data.#{@format.capitalize}Store" : options[:type]
+
       @controller = self.class.get_controller(options[:controller])
       @model      = self.class.get_model(options[:controller], options[:model])
 
       # Merge Reader/Proxy config
       @config.merge!(reader)
       @config.merge!(proxy)
-      
+
       @config["baseParams"] = {} if @config["baseParams"].nil?
       @config["baseParams"].update("fieldset" => @fieldset)
-      
+
       @config["format"] = @format
 
       # Set storeId implicitly based upon Model name if not set explicitly
@@ -69,7 +69,7 @@ module ExtJS::Data
         "<script>new #{@type}(#{@config.to_json});#{script}</script>"
       end
     end
-    
+
 private
 
     def self.get_controller(name)
@@ -83,7 +83,7 @@ private
         throw NameError.new("ExtJS::Store failed with an unknown controller named '#{name.to_s}'")
       end
     end
-        
+
     def self.get_model(controller, model)
       unless model.class == Class
         begin
@@ -98,7 +98,7 @@ private
       end
       model
     end
-    
+
     def proxy
       proxy = {}
       if @proxy === 'direct'
@@ -117,15 +117,15 @@ private
       end
       proxy
     end
-    
-    def reader 
+
+    def reader
       {
         "successProperty" => @controller.extjs_success_property,
         "root" => @controller.extjs_root,
         "messageProperty" => @controller.extjs_message_property
       }.merge(@schema || @model.extjs_record(@fieldset))
     end
-    
-    
+
+
   end
 end
